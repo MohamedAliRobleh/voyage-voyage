@@ -97,12 +97,7 @@ export default function ContactPage() {
                       label: t("contact.info.email"),
                       content: (
                         <div className="space-y-1">
-                          <a
-                            href="mailto:contact@voyage-voyage-djibouti.com"
-                            className="block text-[#408398] hover:underline text-sm"
-                          >
-                            contact@voyage-voyage-djibouti.com
-                          </a>
+                          
                           <a
                             href="mailto:voyagevoyagedjib@gmail.com"
                             className="block text-[#408398] hover:underline text-sm"
