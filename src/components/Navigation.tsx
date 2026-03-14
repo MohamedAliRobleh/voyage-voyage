@@ -202,8 +202,11 @@ export default function Navigation() {
       </motion.nav>
 
       {/* ── Mobile Bottom Tab Bar ── */}
-      <div className="lg:hidden fixed bottom-0 left-0 right-0 z-50 bg-white border-t border-gray-100 shadow-[0_-4px_20px_rgba(0,0,0,0.08)]" style={{ paddingBottom: "env(safe-area-inset-bottom)" }}>
-        <div className="flex items-stretch">
+      <div
+        className="lg:hidden fixed bottom-0 left-0 right-0 z-50 bg-white border-t border-gray-200 shadow-[0_-4px_24px_rgba(0,0,0,0.1)]"
+        style={{ paddingBottom: "env(safe-area-inset-bottom)" }}
+      >
+        <div className="flex items-stretch h-16">
           {tabs.map((tab) => {
             const isActive = pathname === tab.href || (tab.href !== "/" && pathname.startsWith(tab.href));
             return (
@@ -211,20 +214,21 @@ export default function Navigation() {
                 key={tab.href}
                 href={tab.href}
                 onClick={tab.href === "/" ? scrollToTop : undefined}
-                className="flex-1 flex flex-col items-center justify-center py-2 gap-0.5 relative"
+                className="flex-1 flex flex-col items-center justify-center gap-1 relative min-h-[64px] active:bg-gray-50"
               >
                 {isActive && (
                   <motion.div
                     layoutId="tab-indicator"
-                    className="absolute top-0 left-1/2 -translate-x-1/2 w-8 h-0.5 bg-[#408398] rounded-full"
+                    className="absolute top-0 left-1/2 -translate-x-1/2 w-10 h-[3px] bg-[#408398] rounded-full"
                   />
                 )}
                 <tab.icon
-                  size={20}
+                  size={22}
+                  strokeWidth={isActive ? 2.5 : 1.8}
                   className={`transition-colors ${isActive ? "text-[#408398]" : "text-gray-400"}`}
                 />
                 <span
-                  className={`text-[10px] font-medium tracking-wide transition-colors leading-tight text-center ${
+                  className={`text-[10px] font-semibold tracking-wide transition-colors leading-none text-center px-1 ${
                     isActive ? "text-[#408398]" : "text-gray-400"
                   }`}
                 >
