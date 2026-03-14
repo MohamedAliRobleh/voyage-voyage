@@ -194,7 +194,8 @@ export default function AdminPage() {
           <div>
             <p className="font-semibold text-gray-900 text-sm">Statistiques de visites</p>
             <p className="text-gray-500 text-sm mt-1">
-              Les statistiques détaillées (visites, pages populaires, pays des visiteurs) seront disponibles via <strong>Vercel Analytics</strong> une fois le site migré sur le domaine officiel.
+              Vercel Analytics est <strong className="text-green-600">activé</strong>. Les statistiques détaillées (visites, pages populaires, pays des visiteurs) sont visibles directement sur{" "}
+              <a href="https://vercel.com/dashboard" target="_blank" rel="noopener noreferrer" className="text-[#408398] underline font-medium">vercel.com → Analytics</a>.
             </p>
           </div>
         </motion.div>
