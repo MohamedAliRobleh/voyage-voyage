@@ -1,11 +1,9 @@
 import type { Metadata } from "next";
 import { Bebas_Neue, Outfit } from "next/font/google";
 import "./globals.css";
-import Navigation from "@/components/Navigation";
-import Footer from "@/components/Footer";
-import FloatingButtons from "@/components/FloatingButtons";
 import { Toaster } from "react-hot-toast";
 import { LanguageProvider } from "@/contexts/LanguageContext";
+import SiteShell from "@/components/SiteShell";
 
 const bebasNeue = Bebas_Neue({
   weight: "400",
@@ -45,10 +43,7 @@ export default function RootLayout({
     <html lang="fr" suppressHydrationWarning>
       <body className={`${bebasNeue.variable} ${outfit.variable} antialiased`}>
         <LanguageProvider>
-          <Navigation />
-          <main>{children}</main>
-          <Footer />
-          <FloatingButtons />
+          <SiteShell>{children}</SiteShell>
           <Toaster
             position="top-right"
             toastOptions={{
