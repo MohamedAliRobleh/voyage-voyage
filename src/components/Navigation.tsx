@@ -61,6 +61,7 @@ export default function Navigation() {
         className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
           isScrolled ? "bg-white/95 backdrop-blur-md shadow-lg" : "bg-black/20 backdrop-blur-sm"
         }`}
+        style={{ transform: "translateZ(0)", willChange: "transform" }}
       >
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-16">
@@ -204,7 +205,12 @@ export default function Navigation() {
       {/* ── Mobile Bottom Tab Bar ── */}
       <div
         className="lg:hidden fixed bottom-0 left-0 right-0 z-50 bg-white border-t border-gray-200 shadow-[0_-4px_24px_rgba(0,0,0,0.1)]"
-        style={{ paddingBottom: "env(safe-area-inset-bottom)" }}
+        style={{
+          paddingBottom: "env(safe-area-inset-bottom)",
+          transform: "translateZ(0)",
+          willChange: "transform",
+          WebkitTransform: "translateZ(0)",
+        }}
       >
         <div className="flex items-stretch h-16">
           {tabs.map((tab) => {
