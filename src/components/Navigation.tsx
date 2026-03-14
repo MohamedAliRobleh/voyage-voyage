@@ -4,7 +4,7 @@ import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
-import { ChevronDown, Globe, Home, Info, Map, Phone, Flag } from "lucide-react";
+import { ChevronDown, Globe, Home, Info, Map, Phone, Flag, Briefcase, Package } from "lucide-react";
 import { destinations } from "@/lib/destinations";
 import { useLanguage, Locale } from "@/contexts/LanguageContext";
 
@@ -46,8 +46,8 @@ export default function Navigation() {
   const tabs = [
     { href: "/", icon: Home, label: t("nav.home") },
     { href: "/destinations", icon: Map, label: t("nav.destinations") },
-    { href: "/djibouti", icon: Flag, label: "Djibouti" },
-    { href: "/about", icon: Info, label: t("nav.about") },
+    { href: "/services", icon: Briefcase, label: t("nav.services") },
+    { href: "/packages", icon: Package, label: t("nav.packages") },
     { href: "/contact", icon: Phone, label: t("nav.contact") },
   ];
 
@@ -137,7 +137,9 @@ export default function Navigation() {
                 </AnimatePresence>
               </div>
 
-              <NavLink href="/contact" isScrolled={isScrolled} icon={<Phone size={13} />}>{t("nav.contact")}</NavLink>
+              <NavLink href="/services" isScrolled={isScrolled} icon={<Briefcase size={13} />}>{t("nav.services")}</NavLink>
+            <NavLink href="/packages" isScrolled={isScrolled} icon={<Package size={13} />}>{t("nav.packages")}</NavLink>
+            <NavLink href="/contact" isScrolled={isScrolled} icon={<Phone size={13} />}>{t("nav.contact")}</NavLink>
 
               {/* Language Switcher */}
               <div className="relative" ref={langRef}>
