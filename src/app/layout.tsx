@@ -4,6 +4,7 @@ import "./globals.css";
 import { Toaster } from "react-hot-toast";
 import { LanguageProvider } from "@/contexts/LanguageContext";
 import SiteShell from "@/components/SiteShell";
+import { Analytics } from "@vercel/analytics/next";
 
 const bebasNeue = Bebas_Neue({
   weight: "400",
@@ -44,6 +45,7 @@ export default function RootLayout({
       <body className={`${bebasNeue.variable} ${outfit.variable} antialiased`}>
         <LanguageProvider>
           <SiteShell>{children}</SiteShell>
+          <Analytics />
           <Toaster
             position="top-right"
             toastOptions={{
