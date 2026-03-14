@@ -194,8 +194,9 @@ export default function AdminPage() {
           <div>
             <p className="font-semibold text-gray-900 text-sm">Statistiques de visites</p>
             <p className="text-gray-500 text-sm mt-1">
-              Vercel Analytics est <strong className="text-green-600">activé</strong>. Les statistiques détaillées (visites, pages populaires, pays des visiteurs) sont visibles directement sur{" "}
-              <a href="https://vercel.com/dashboard" target="_blank" rel="noopener noreferrer" className="text-[#408398] underline font-medium">vercel.com → Analytics</a>.
+              Statistiques en temps réel disponibles sur{" "}
+              <a href="https://cloud.umami.is" target="_blank" rel="noopener noreferrer" className="text-[#408398] underline font-medium">cloud.umami.is</a>
+              {" "}— visites, pages populaires, pays des visiteurs, appareils.
             </p>
           </div>
         </motion.div>

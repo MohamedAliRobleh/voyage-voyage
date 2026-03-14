@@ -42,6 +42,9 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="fr" suppressHydrationWarning>
+      <head>
+        <script defer src="https://cloud.umami.is/script.js" data-website-id="5dd6b684-f2db-463e-8240-a61f6a58475f"></script>
+      </head>
       <body className={`${bebasNeue.variable} ${outfit.variable} antialiased`}>
         <LanguageProvider>
           <SiteShell>{children}</SiteShell>
