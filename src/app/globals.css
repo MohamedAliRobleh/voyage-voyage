@@ -1,26 +1,164 @@
 @import "tailwindcss";
+@import "leaflet/dist/leaflet.css";
+
+@theme inline {
+  --color-primary-50: #e8f4f7;
+  --color-primary-100: #c5e3ec;
+  --color-primary-200: #9fd0df;
+  --color-primary-300: #79bdd2;
+  --color-primary-400: #5aafc9;
+  --color-primary-500: #408398;
+  --color-primary-600: #326e80;
+  --color-primary-700: #265868;
+  --color-primary-800: #1a4250;
+  --color-primary-900: #0e2d38;
+
+  --color-coral-400: #f08080;
+  --color-coral-500: #e8645a;
+  --color-coral-600: #d4534a;
+
+  --color-accent-400: #a8d5e2;
+  --color-accent-500: #7ec8da;
+  --color-accent-600: #5ab5cb;
+}
 
 :root {
   --background: #ffffff;
   --foreground: #171717;
 }
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
-}
-
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-outfit), system-ui, sans-serif;
+}
+
+/* Titres automatiquement en Bebas Neue */
+h1, h2, h3, h4, h5, h6 {
+  font-family: var(--font-bebas), var(--font-outfit), sans-serif;
+  letter-spacing: 0.03em;
+}
+
+/* Classe utilitaire */
+.font-display {
+  font-family: var(--font-bebas), sans-serif;
+}
+.font-body {
+  font-family: var(--font-outfit), sans-serif;
+}
+
+.font-explorer {
+  font-family: var(--font-bebas), sans-serif;
+}
+
+/* Custom Scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+}
+::-webkit-scrollbar-track {
+  background: #f1f1f1;
+}
+::-webkit-scrollbar-thumb {
+  background: #408398;
+  border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #326e80;
+}
+
+/* Animations */
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes wave-slow {
+  0% { transform: translateX(0) translateZ(0) scaleY(1); }
+  50% { transform: translateX(-25%) translateZ(0) scaleY(0.8); }
+  100% { transform: translateX(-50%) translateZ(0) scaleY(1); }
+}
+
+@keyframes wave-medium {
+  0% { transform: translateX(0) translateZ(0) scaleY(1); }
+  50% { transform: translateX(-30%) translateZ(0) scaleY(0.9); }
+  100% { transform: translateX(-50%) translateZ(0) scaleY(1); }
+}
+
+@keyframes wave-fast {
+  0% { transform: translateX(0) translateZ(0) scaleY(1); }
+  50% { transform: translateX(-20%) translateZ(0) scaleY(0.85); }
+  100% { transform: translateX(-50%) translateZ(0) scaleY(1); }
+}
+
+@keyframes pulse-glow {
+  0%, 100% { box-shadow: 0 0 15px rgba(64, 131, 152, 0.4); }
+  50% { box-shadow: 0 0 30px rgba(64, 131, 152, 0.8); }
+}
+
+@keyframes shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+
+@keyframes float {
+  0%, 100% { transform: translateY(0px); }
+  50% { transform: translateY(-10px); }
+}
+
+.animate-wave-slow {
+  animation: wave-slow 8s linear infinite;
+}
+.animate-wave-medium {
+  animation: wave-medium 6s linear infinite;
+}
+.animate-wave-fast {
+  animation: wave-fast 4s linear infinite;
+}
+.animate-float {
+  animation: float 3s ease-in-out infinite;
+}
+.animate-pulse-glow {
+  animation: pulse-glow 2s ease-in-out infinite;
+}
+.animate-fade-in {
+  animation: fadeIn 0.6s ease-out forwards;
+}
+
+/* Glass morphism */
+.glass {
+  backdrop-filter: blur(10px);
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+/* Gradient text */
+.gradient-text {
+  background: linear-gradient(135deg, #408398, #e8645a);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* Card hover */
+.card-hover {
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+.card-hover:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 20px 40px rgba(0,0,0,0.15);
+}
+
+/* Scrollbar hide */
+.scrollbar-hide {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
+}
+
+/* Image strip slider */
+@keyframes slide {
+  from { transform: translateX(0); }
+  to { transform: translateX(-50%); }
 }
