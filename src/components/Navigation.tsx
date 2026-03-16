@@ -47,7 +47,6 @@ export default function Navigation() {
     { href: "/", icon: Home, label: t("nav.home") },
     { href: "/destinations", icon: Map, label: t("nav.destinations") },
     { href: "/services", icon: Briefcase, label: t("nav.services") },
-    { href: "/packages", icon: Package, label: t("nav.packages") },
     { href: "/contact", icon: Phone, label: t("nav.contact") },
   ];
 
@@ -138,7 +137,6 @@ export default function Navigation() {
               </div>
 
               <NavLink href="/services" isScrolled={isScrolled} icon={<Briefcase size={13} />}>{t("nav.services")}</NavLink>
-            <NavLink href="/packages" isScrolled={isScrolled} icon={<Package size={13} />}>{t("nav.packages")}</NavLink>
             <NavLink href="/contact" isScrolled={isScrolled} icon={<Phone size={13} />}>{t("nav.contact")}</NavLink>
 
               {/* Language Switcher */}

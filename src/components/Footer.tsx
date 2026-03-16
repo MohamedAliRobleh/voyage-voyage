@@ -50,7 +50,6 @@ export default function Footer() {
                   { href: "/about", labelKey: "nav.about" },
                   { href: "/destinations", labelKey: "nav.destinations" },
                   { href: "/services", labelKey: "nav.services" },
-                  { href: "/packages", labelKey: "nav.packages" },
                   { href: "/djibouti", labelKey: "nav.djibouti" },
                   { href: "/contact", labelKey: "nav.contact" },
                 ].map((item) => (

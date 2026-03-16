@@ -152,12 +152,6 @@ export default function ServicesPage() {
             >
               Demander un devis
             </Link>
-            <Link
-              href="/packages"
-              className="px-8 py-4 bg-[#e8645a] text-white rounded-full font-semibold hover:bg-[#d4534a] transition-all"
-            >
-              Voir nos packages
-            </Link>
           </div>
         </div>
       </section>
