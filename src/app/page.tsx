@@ -133,7 +133,7 @@ export default function HomePage() {
               style={{ background: "linear-gradient(135deg, #408398, #5bb8d4)" }}>
               🇩🇯
             </div>
-            <span className="text-white font-black uppercase tracking-[0.3em] text-sm mt-3">DJIBOUTI</span>
+            <span className="text-white font-black uppercase tracking-[0.3em] text-2xl mt-3">DJIBOUTI</span>
           </motion.div>
 
           <motion.h2 initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }} viewport={{ once: true }}
