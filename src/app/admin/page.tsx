@@ -115,7 +115,6 @@ export default function AdminPage() {
     { label: "Accueil", href: "/", icon: LayoutDashboard },
     { label: "Destinations", href: "/destinations", icon: Map },
     { label: "Services", href: "/services", icon: Briefcase },
-    { label: "Packages", href: "/packages", icon: Package },
     { label: "Djibouti", href: "/djibouti", icon: Globe },
     { label: "À propos", href: "/about", icon: Users },
     { label: "Contact", href: "/contact", icon: MessageCircle },
