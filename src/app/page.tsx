@@ -128,9 +128,12 @@ export default function HomePage() {
 
         <div className="relative z-10 max-w-4xl mx-auto px-4 text-center">
           <motion.div initial={{ opacity: 0, scale: 0.8 }} whileInView={{ opacity: 1, scale: 1 }} viewport={{ once: true }}
-            className="w-20 h-20 rounded-2xl mx-auto mb-8 flex items-center justify-center text-3xl shadow-2xl"
-            style={{ background: "linear-gradient(135deg, #408398, #5bb8d4)" }}>
-            🇩🇯
+            className="flex flex-col items-center mb-8">
+            <div className="w-20 h-20 rounded-2xl flex items-center justify-center text-3xl shadow-2xl"
+              style={{ background: "linear-gradient(135deg, #408398, #5bb8d4)" }}>
+              🇩🇯
+            </div>
+            <span className="text-white font-black uppercase tracking-[0.3em] text-sm mt-3">DJIBOUTI</span>
           </motion.div>
 
           <motion.h2 initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }} viewport={{ once: true }}
@@ -152,7 +155,7 @@ export default function HomePage() {
             {[
               { value: "23 200", unit: "km²", label: t("home.intro.statArea") },
               { value: "13+", unit: "", label: t("home.intro.statDestinations") },
-              { value: "500+", unit: "", label: t("home.intro.statTravelers") },
+              { value: "1500+", unit: "", label: t("home.intro.statTravelers") },
               { value: "10+", unit: t("common.years"), label: t("home.intro.statExperience") },
             ].map((s, i) => (
               <div key={i} className="text-center">
