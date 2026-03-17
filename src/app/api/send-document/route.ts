@@ -143,6 +143,31 @@ function generateHTML(doc: Facture): string {
 </html>`;
 }
 
+function generateText(doc: Facture): string {
+  const isDevis = doc.type === "devis";
+  const lines = doc.lignes.map(l =>
+    `- ${l.description} x${l.quantite} @ ${formatMoney(l.prix_unitaire)} = ${formatMoney(l.quantite * l.prix_unitaire)}`
+  ).join("\n");
+
+  return `Bonjour ${doc.client_nom},
+
+Veuillez trouver ci-dessous votre ${isDevis ? "devis" : "facture"} ${doc.numero}.
+
+Date : ${formatDate(doc.date)}${doc.echeance ? `\n${isDevis ? "Validité" : "Échéance"} : ${formatDate(doc.echeance)}` : ""}
+
+DÉTAIL
+------
+${lines}
+
+TOTAL : ${formatMoney(doc.total)}
+
+${doc.notes ? `Notes : ${doc.notes}\n\n` : ""}${isDevis ? `Pour accepter ce devis, répondez à cet email ou écrivez à voyagevoyagedjib@gmail.com en indiquant votre accord.` : `Paiement à réception de facture.`}
+
+Cordialement,
+Voyage Voyage
+contact@voyagevoyagedj.com | +253 77 07 33 77`;
+}
+
 export async function POST(req: NextRequest) {
   const { document } = await req.json() as { document: Facture };
 
@@ -158,9 +183,14 @@ export async function POST(req: NextRequest) {
   const { error } = await resend.emails.send({
     from: "Voyage Voyage <contact@voyagevoyagedj.com>",
     to: document.client_email,
-    replyTo: "contact@voyagevoyagedj.com",
+    replyTo: "voyagevoyagedjib@gmail.com",
     subject,
     html: generateHTML(document),
+    text: generateText(document),
+    headers: {
+      "X-Priority": "1",
+      "Importance": "high",
+    },
   });
 
   if (error) {
