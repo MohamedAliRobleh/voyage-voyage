@@ -127,6 +127,105 @@ export default function FacturesSection() {
   const totalPaye = factures.filter(f => f.statut === "payé").reduce((s, f) => s + f.total, 0);
   const totalEnAttente = factures.filter(f => f.statut !== "payé").reduce((s, f) => s + f.total, 0);
 
+  // Detail panel inner content — shared between bottom sheet and desktop side panel
+  const DetailPanelContent = ({ doc }: { doc: Facture }) => (
+    <>
+      {/* Panel header */}
+      <div className="px-5 py-4 border-b border-gray-100 flex items-center justify-between">
+        <div>
+          <div className="flex items-center gap-2 mb-0.5">
+            <span className={`text-[9px] font-bold px-2 py-0.5 rounded ${doc.type === "devis" ? "bg-amber-100 text-amber-600" : "bg-[#408398]/10 text-[#408398]"}`}>
+              {doc.type === "devis" ? "DEVIS" : "FACTURE"}
+            </span>
+            <span className="text-sm font-bold text-gray-900">{doc.numero}</span>
+          </div>
+          <p className="text-xs text-gray-400">{doc.client_nom}</p>
+        </div>
+        <button onClick={() => setSelected(null)} className="p-1.5 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors">
+          <X size={15} />
+        </button>
+      </div>
+
+      <div className="p-5 space-y-5">
+        {/* Statut */}
+        <div>
+          <p className="text-[10px] font-bold uppercase tracking-wider text-gray-400 mb-2">Statut</p>
+          <div className="flex flex-wrap gap-1.5">
+            {(Object.keys(statutConfig) as Array<keyof typeof statutConfig>).map(s => {
+              const cfg = statutConfig[s];
+              const active = doc.statut === s;
+              return (
+                <button key={s} onClick={() => changeStatut(doc.id, s)}
+                  className={`flex items-center justify-center gap-1 px-2.5 py-2 rounded-xl text-[10px] font-semibold border transition-all
+                    ${active ? `${cfg.bg} ${cfg.text} border-transparent` : "border-gray-200 text-gray-400 hover:border-gray-300 hover:text-gray-500"}`}>
+                  {active && <Check size={10} />}
+                  {cfg.label}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* Infos */}
+        <div className="grid grid-cols-2 gap-3">
+          <div className="bg-gray-50 rounded-xl p-3">
+            <p className="text-[9px] font-bold uppercase tracking-wider text-gray-400 mb-1">Client</p>
+            <p className="text-xs font-semibold text-gray-900">{doc.client_nom}</p>
+            {doc.client_email && <p className="text-[10px] text-gray-400 mt-0.5 truncate">{doc.client_email}</p>}
+          </div>
+          <div className="bg-gray-50 rounded-xl p-3">
+            <p className="text-[9px] font-bold uppercase tracking-wider text-gray-400 mb-1">Date</p>
+            <p className="text-xs font-semibold text-gray-900">{fmtDate(doc.date)}</p>
+            {doc.echeance && (
+              <p className="text-[10px] text-gray-400 mt-0.5">
+                {doc.type === "devis" ? "Valide jusqu'au" : "Éch."} {fmtDate(doc.echeance)}
+              </p>
+            )}
+          </div>
+        </div>
+
+        {/* Lignes */}
+        <div>
+          <p className="text-[10px] font-bold uppercase tracking-wider text-gray-400 mb-2">Prestations</p>
+          <div className="rounded-xl overflow-hidden border border-gray-100">
+            {doc.lignes.map((l, i) => (
+              <div key={i} className="flex items-center justify-between px-3.5 py-2.5 border-b border-gray-50 last:border-0 bg-white hover:bg-gray-50/50 transition-colors">
+                <div className="flex-1 min-w-0">
+                  <p className="text-xs text-gray-800 truncate">{l.description}</p>
+                  <p className="text-[10px] text-gray-400">×{l.quantite} · {fmt(l.prix_unitaire)}</p>
+                </div>
+                <p className="text-xs font-bold text-gray-900 ml-3 shrink-0">{fmt(l.quantite * l.prix_unitaire)}</p>
+              </div>
+            ))}
+            <div className="flex items-center justify-between px-3.5 py-3 bg-[#0e2d38]">
+              <span className="text-xs font-bold text-white/70">Total TTC</span>
+              <span className="text-sm font-bold text-white">{fmt(doc.total)}</span>
+            </div>
+          </div>
+        </div>
+
+        {doc.notes && (
+          <div className="bg-gray-50 rounded-xl p-3">
+            <p className="text-[9px] font-bold uppercase tracking-wider text-gray-400 mb-1.5">Notes</p>
+            <p className="text-xs text-gray-600 leading-relaxed">{doc.notes}</p>
+          </div>
+        )}
+
+        {/* Actions */}
+        <div className="flex flex-col gap-2 pt-1">
+          <button onClick={() => { setPreviewDoc(doc); setSelected(null); }}
+            className="flex items-center justify-center gap-2 py-2.5 bg-[#408398] text-white rounded-xl text-xs font-semibold hover:bg-[#326e80] transition-colors">
+            <Eye size={13} /> Aperçu & Envoi
+          </button>
+          <button onClick={() => deleteFacture(doc.id)}
+            className="flex items-center justify-center gap-2 py-2.5 border border-red-200 text-red-400 rounded-xl text-xs font-medium hover:bg-red-50 transition-colors">
+            <Trash2 size={13} /> Supprimer
+          </button>
+        </div>
+      </div>
+    </>
+  );
+
   return (
     <div className="flex gap-0 h-full">
       {/* Left: main list */}
@@ -165,19 +264,20 @@ export default function FacturesSection() {
           <div className="flex gap-2">
             <button onClick={() => openForm("devis")}
               className="flex items-center gap-1.5 px-3.5 py-2 bg-amber-500 text-white rounded-xl text-xs font-semibold hover:bg-amber-600 transition-colors">
-              <Plus size={13} /> Nouveau devis
+              <Plus size={13} /> <span className="hidden sm:inline">Nouveau devis</span><span className="sm:hidden">Devis</span>
             </button>
             <button onClick={() => openForm("facture")}
               className="flex items-center gap-1.5 px-3.5 py-2 bg-[#0e2d38] text-white rounded-xl text-xs font-semibold hover:bg-[#1a3f50] transition-colors">
-              <Plus size={13} /> Nouvelle facture
+              <Plus size={13} /> <span className="hidden sm:inline">Nouvelle facture</span><span className="sm:hidden">Facture</span>
             </button>
           </div>
         </div>
 
-        {/* Table */}
+        {/* Table / Card list */}
         <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
-          {/* Table header */}
-          <div className="grid grid-cols-12 px-5 py-2.5 border-b border-gray-50 bg-gray-50/60">
+
+          {/* Desktop table header — hidden on mobile */}
+          <div className="hidden sm:grid grid-cols-12 px-5 py-2.5 border-b border-gray-50 bg-gray-50/60">
             <span className="col-span-3 text-[10px] font-bold uppercase tracking-wider text-gray-400">N° Document</span>
             <span className="col-span-3 text-[10px] font-bold uppercase tracking-wider text-gray-400">Client</span>
             <span className="col-span-2 text-[10px] font-bold uppercase tracking-wider text-gray-400">Date</span>
@@ -195,45 +295,89 @@ export default function FacturesSection() {
               <p className="text-sm text-gray-400">Aucun document</p>
               <p className="text-xs text-gray-300 mt-1">Créez un devis ou une facture pour commencer</p>
             </div>
-          ) : filtered.map((f, i) => {
+          ) : filtered.map((f) => {
             const s = statutConfig[f.statut as keyof typeof statutConfig] || statutConfig.brouillon;
             const isDevis = f.type === "devis";
             const isActive = selected?.id === f.id;
             return (
-              <div key={f.id} onClick={() => setSelected(isActive ? null : f)}
-                className={`grid grid-cols-12 items-center px-5 py-3.5 cursor-pointer transition-all border-b border-gray-50 last:border-0 group
-                  ${isActive ? "bg-[#408398]/5 border-l-2 border-l-[#408398]" : "hover:bg-gray-50/70"}`}>
-                <div className="col-span-3 flex items-center gap-2.5">
-                  <div className={`w-7 h-7 rounded-lg flex items-center justify-center shrink-0 ${isDevis ? "bg-amber-50" : "bg-[#408398]/8"}`}>
-                    <FileText size={12} className={isDevis ? "text-amber-500" : "text-[#408398]"} />
+              <div key={f.id}>
+                {/* Mobile card — hidden on sm+ */}
+                <div
+                  onClick={() => setSelected(isActive ? null : f)}
+                  className={`sm:hidden px-4 py-3.5 cursor-pointer border-b border-gray-50 last:border-0 transition-all
+                    ${isActive ? "bg-[#408398]/5 border-l-2 border-l-[#408398]" : "hover:bg-gray-50/70"}`}
+                >
+                  {/* Row 1: icon + numero + type badge | total */}
+                  <div className="flex items-center justify-between mb-1.5">
+                    <div className="flex items-center gap-2">
+                      <div className={`w-7 h-7 rounded-lg flex items-center justify-center shrink-0 ${isDevis ? "bg-amber-50" : "bg-[#408398]/8"}`}>
+                        <FileText size={12} className={isDevis ? "text-amber-500" : "text-[#408398]"} />
+                      </div>
+                      <span className="text-xs font-bold text-gray-900">{f.numero}</span>
+                      <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded ${isDevis ? "bg-amber-100 text-amber-600" : "bg-[#408398]/10 text-[#408398]"}`}>
+                        {isDevis ? "DEVIS" : "FACTURE"}
+                      </span>
+                    </div>
+                    <span className="text-xs font-bold text-gray-900">{fmt(f.total)}</span>
                   </div>
-                  <div>
-                    <p className="text-xs font-bold text-gray-900">{f.numero}</p>
-                    <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded ${isDevis ? "bg-amber-100 text-amber-600" : "bg-[#408398]/10 text-[#408398]"}`}>
-                      {isDevis ? "DEVIS" : "FACTURE"}
+                  {/* Row 2: client name | statut badge */}
+                  <div className="flex items-center justify-between mb-1">
+                    <p className="text-xs font-semibold text-gray-700 truncate max-w-[55%]">{f.client_nom}</p>
+                    <span className={`inline-flex items-center gap-1 text-[10px] font-semibold px-2 py-1 rounded-full ${s.bg} ${s.text}`}>
+                      <span className={`w-1.5 h-1.5 rounded-full ${s.dot}`} />
+                      {s.label}
                     </span>
                   </div>
+                  {/* Row 3: date | eye icon */}
+                  <div className="flex items-center justify-between">
+                    <p className="text-[10px] text-gray-400">{fmtDate(f.date)}</p>
+                    <button
+                      onClick={e => { e.stopPropagation(); setPreviewDoc(f); }}
+                      className="p-1.5 text-gray-400 hover:text-[#408398] hover:bg-[#408398]/10 rounded-lg transition-all"
+                    >
+                      <Eye size={13} />
+                    </button>
+                  </div>
                 </div>
-                <div className="col-span-3">
-                  <p className="text-xs font-semibold text-gray-800 truncate">{f.client_nom}</p>
-                  {f.client_email && <p className="text-[10px] text-gray-400 truncate">{f.client_email}</p>}
-                </div>
-                <div className="col-span-2">
-                  <p className="text-xs text-gray-600">{fmtDate(f.date)}</p>
-                </div>
-                <div className="col-span-2">
-                  <span className={`inline-flex items-center gap-1 text-[10px] font-semibold px-2 py-1 rounded-full ${s.bg} ${s.text}`}>
-                    <span className={`w-1.5 h-1.5 rounded-full ${s.dot}`} />
-                    {s.label}
-                  </span>
-                </div>
-                <div className="col-span-2 flex items-center justify-end gap-2">
-                  <p className="text-xs font-bold text-gray-900">{fmt(f.total)}</p>
-                  <button onClick={e => { e.stopPropagation(); setPreviewDoc(f); }}
-                    className="opacity-0 group-hover:opacity-100 p-1.5 text-gray-400 hover:text-[#408398] hover:bg-[#408398]/10 rounded-lg transition-all">
-                    <Eye size={13} />
-                  </button>
-                  <ArrowRight size={13} className={`transition-colors ${isActive ? "text-[#408398]" : "text-gray-200 group-hover:text-gray-400"}`} />
+
+                {/* Desktop table row — hidden on mobile */}
+                <div
+                  onClick={() => setSelected(isActive ? null : f)}
+                  className={`hidden sm:grid grid-cols-12 items-center px-5 py-3.5 cursor-pointer transition-all border-b border-gray-50 last:border-0 group
+                    ${isActive ? "bg-[#408398]/5 border-l-2 border-l-[#408398]" : "hover:bg-gray-50/70"}`}
+                >
+                  <div className="col-span-3 flex items-center gap-2.5">
+                    <div className={`w-7 h-7 rounded-lg flex items-center justify-center shrink-0 ${isDevis ? "bg-amber-50" : "bg-[#408398]/8"}`}>
+                      <FileText size={12} className={isDevis ? "text-amber-500" : "text-[#408398]"} />
+                    </div>
+                    <div>
+                      <p className="text-xs font-bold text-gray-900">{f.numero}</p>
+                      <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded ${isDevis ? "bg-amber-100 text-amber-600" : "bg-[#408398]/10 text-[#408398]"}`}>
+                        {isDevis ? "DEVIS" : "FACTURE"}
+                      </span>
+                    </div>
+                  </div>
+                  <div className="col-span-3">
+                    <p className="text-xs font-semibold text-gray-800 truncate">{f.client_nom}</p>
+                    {f.client_email && <p className="text-[10px] text-gray-400 truncate">{f.client_email}</p>}
+                  </div>
+                  <div className="col-span-2">
+                    <p className="text-xs text-gray-600">{fmtDate(f.date)}</p>
+                  </div>
+                  <div className="col-span-2">
+                    <span className={`inline-flex items-center gap-1 text-[10px] font-semibold px-2 py-1 rounded-full ${s.bg} ${s.text}`}>
+                      <span className={`w-1.5 h-1.5 rounded-full ${s.dot}`} />
+                      {s.label}
+                    </span>
+                  </div>
+                  <div className="col-span-2 flex items-center justify-end gap-2">
+                    <p className="text-xs font-bold text-gray-900">{fmt(f.total)}</p>
+                    <button onClick={e => { e.stopPropagation(); setPreviewDoc(f); }}
+                      className="opacity-0 group-hover:opacity-100 p-1.5 text-gray-400 hover:text-[#408398] hover:bg-[#408398]/10 rounded-lg transition-all">
+                      <Eye size={13} />
+                    </button>
+                    <ArrowRight size={13} className={`transition-colors ${isActive ? "text-[#408398]" : "text-gray-200 group-hover:text-gray-400"}`} />
+                  </div>
                 </div>
               </div>
             );
@@ -241,111 +385,51 @@ export default function FacturesSection() {
         </div>
       </div>
 
-      {/* Right: detail panel */}
+      {/* Desktop detail panel — inline side panel, hidden on mobile */}
       <AnimatePresence>
         {selected && (
           <motion.div
             initial={{ opacity: 0, x: 20, width: 0 }}
             animate={{ opacity: 1, x: 0, width: 340 }}
             exit={{ opacity: 0, x: 20, width: 0 }}
-            className="shrink-0 overflow-hidden"
+            className="hidden sm:block shrink-0 overflow-hidden"
           >
             <div className="w-[340px] ml-4 bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden flex flex-col h-fit sticky top-0">
-              {/* Panel header */}
-              <div className="px-5 py-4 border-b border-gray-100 flex items-center justify-between">
-                <div>
-                  <div className="flex items-center gap-2 mb-0.5">
-                    <span className={`text-[9px] font-bold px-2 py-0.5 rounded ${selected.type === "devis" ? "bg-amber-100 text-amber-600" : "bg-[#408398]/10 text-[#408398]"}`}>
-                      {selected.type === "devis" ? "DEVIS" : "FACTURE"}
-                    </span>
-                    <span className="text-sm font-bold text-gray-900">{selected.numero}</span>
-                  </div>
-                  <p className="text-xs text-gray-400">{selected.client_nom}</p>
-                </div>
-                <button onClick={() => setSelected(null)} className="p-1.5 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors">
-                  <X size={15} />
-                </button>
-              </div>
-
-              <div className="p-5 space-y-5 overflow-y-auto">
-                {/* Statut */}
-                <div>
-                  <p className="text-[10px] font-bold uppercase tracking-wider text-gray-400 mb-2">Statut</p>
-                  <div className="flex gap-1.5">
-                    {(Object.keys(statutConfig) as Array<keyof typeof statutConfig>).map(s => {
-                      const cfg = statutConfig[s];
-                      const active = selected.statut === s;
-                      return (
-                        <button key={s} onClick={() => changeStatut(selected.id, s)}
-                          className={`flex-1 flex items-center justify-center gap-1 py-2 rounded-xl text-[10px] font-semibold border transition-all
-                            ${active ? `${cfg.bg} ${cfg.text} border-transparent` : "border-gray-200 text-gray-400 hover:border-gray-300 hover:text-gray-500"}`}>
-                          {active && <Check size={10} />}
-                          {cfg.label}
-                        </button>
-                      );
-                    })}
-                  </div>
-                </div>
-
-                {/* Infos */}
-                <div className="grid grid-cols-2 gap-3">
-                  <div className="bg-gray-50 rounded-xl p-3">
-                    <p className="text-[9px] font-bold uppercase tracking-wider text-gray-400 mb-1">Client</p>
-                    <p className="text-xs font-semibold text-gray-900">{selected.client_nom}</p>
-                    {selected.client_email && <p className="text-[10px] text-gray-400 mt-0.5 truncate">{selected.client_email}</p>}
-                  </div>
-                  <div className="bg-gray-50 rounded-xl p-3">
-                    <p className="text-[9px] font-bold uppercase tracking-wider text-gray-400 mb-1">Date</p>
-                    <p className="text-xs font-semibold text-gray-900">{fmtDate(selected.date)}</p>
-                    {selected.echeance && (
-                      <p className="text-[10px] text-gray-400 mt-0.5">
-                        {selected.type === "devis" ? "Valide jusqu'au" : "Éch."} {fmtDate(selected.echeance)}
-                      </p>
-                    )}
-                  </div>
-                </div>
-
-                {/* Lignes */}
-                <div>
-                  <p className="text-[10px] font-bold uppercase tracking-wider text-gray-400 mb-2">Prestations</p>
-                  <div className="rounded-xl overflow-hidden border border-gray-100">
-                    {selected.lignes.map((l, i) => (
-                      <div key={i} className="flex items-center justify-between px-3.5 py-2.5 border-b border-gray-50 last:border-0 bg-white hover:bg-gray-50/50 transition-colors">
-                        <div className="flex-1 min-w-0">
-                          <p className="text-xs text-gray-800 truncate">{l.description}</p>
-                          <p className="text-[10px] text-gray-400">×{l.quantite} · {fmt(l.prix_unitaire)}</p>
-                        </div>
-                        <p className="text-xs font-bold text-gray-900 ml-3 shrink-0">{fmt(l.quantite * l.prix_unitaire)}</p>
-                      </div>
-                    ))}
-                    <div className="flex items-center justify-between px-3.5 py-3 bg-[#0e2d38]">
-                      <span className="text-xs font-bold text-white/70">Total TTC</span>
-                      <span className="text-sm font-bold text-white">{fmt(selected.total)}</span>
-                    </div>
-                  </div>
-                </div>
-
-                {selected.notes && (
-                  <div className="bg-gray-50 rounded-xl p-3">
-                    <p className="text-[9px] font-bold uppercase tracking-wider text-gray-400 mb-1.5">Notes</p>
-                    <p className="text-xs text-gray-600 leading-relaxed">{selected.notes}</p>
-                  </div>
-                )}
-
-                {/* Actions */}
-                <div className="flex flex-col gap-2 pt-1">
-                  <button onClick={() => { setPreviewDoc(selected); setSelected(null); }}
-                    className="flex items-center justify-center gap-2 py-2.5 bg-[#408398] text-white rounded-xl text-xs font-semibold hover:bg-[#326e80] transition-colors">
-                    <Eye size={13} /> Aperçu & Envoi
-                  </button>
-                  <button onClick={() => deleteFacture(selected.id)}
-                    className="flex items-center justify-center gap-2 py-2.5 border border-red-200 text-red-400 rounded-xl text-xs font-medium hover:bg-red-50 transition-colors">
-                    <Trash2 size={13} /> Supprimer
-                  </button>
-                </div>
+              <div className="overflow-y-auto">
+                <DetailPanelContent doc={selected} />
               </div>
             </div>
           </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Mobile bottom sheet detail panel */}
+      <AnimatePresence>
+        {selected && (
+          <>
+            {/* Dark overlay */}
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="sm:hidden fixed inset-0 bg-black/40 z-40"
+              onClick={() => setSelected(null)}
+            />
+            {/* Bottom sheet */}
+            <motion.div
+              initial={{ y: "100%" }}
+              animate={{ y: 0 }}
+              exit={{ y: "100%" }}
+              transition={{ type: "spring", damping: 30, stiffness: 300 }}
+              className="sm:hidden fixed bottom-0 left-0 right-0 z-50 bg-white rounded-t-2xl shadow-2xl max-h-[80vh] overflow-y-auto"
+            >
+              {/* Drag handle */}
+              <div className="flex justify-center pt-3 pb-1">
+                <div className="w-10 h-1 rounded-full bg-gray-200" />
+              </div>
+              <DetailPanelContent doc={selected} />
+            </motion.div>
+          </>
         )}
       </AnimatePresence>
 
