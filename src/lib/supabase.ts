@@ -25,6 +25,7 @@ export type LigneFacture = {
 export type Facture = {
   id: string;
   numero: string;
+  type: "facture" | "devis";
   client_id: string;
   client_nom: string;
   client_email: string;
