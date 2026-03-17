@@ -1,9 +1,10 @@
 "use client";
 
-import { useRef } from "react";
+import { useRef, useState } from "react";
 import type { Facture } from "@/lib/supabase";
-import { X, Printer } from "lucide-react";
+import { X, Printer, Send, Check } from "lucide-react";
 import { motion } from "framer-motion";
+import toast from "react-hot-toast";
 
 interface Props {
   document: Facture;
@@ -14,6 +15,32 @@ const TVA_RATE = 0; // Djibouti : pas de TVA standard, mettre 0
 
 export default function DocumentPreview({ document: doc, onClose }: Props) {
   const printRef = useRef<HTMLDivElement>(null);
+  const [sending, setSending] = useState(false);
+  const [sent, setSent] = useState(false);
+
+  const handleSendEmail = async () => {
+    if (!doc.client_email) {
+      toast.error("Aucun email client renseigné pour ce document");
+      return;
+    }
+    setSending(true);
+    try {
+      const res = await fetch("/api/send-document", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ document: doc }),
+      });
+      if (res.ok) {
+        setSent(true);
+        toast.success(`${doc.type === "devis" ? "Devis" : "Facture"} envoyé(e) à ${doc.client_email} ✓`);
+      } else {
+        toast.error("Erreur lors de l'envoi. Vérifiez la configuration email.");
+      }
+    } catch {
+      toast.error("Erreur réseau");
+    }
+    setSending(false);
+  };
 
   const isDevis = doc.type === "devis";
   const total_ht = doc.total;
@@ -120,6 +147,18 @@ export default function DocumentPreview({ document: doc, onClose }: Props) {
             <span className="text-sm text-gray-400">— {doc.client_nom}</span>
           </div>
           <div className="flex items-center gap-2">
+            <button
+              onClick={handleSendEmail}
+              disabled={sending || sent}
+              className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold transition-colors disabled:opacity-60 ${
+                sent
+                  ? "bg-green-500 text-white"
+                  : "bg-amber-500 hover:bg-amber-600 text-white"
+              }`}
+            >
+              {sent ? <Check size={15} /> : sending ? <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" /> : <Send size={15} />}
+              {sent ? "Envoyé !" : sending ? "Envoi..." : `Envoyer à ${doc.client_email || "client"}`}
+            </button>
             <button
               onClick={handlePrint}
               className="flex items-center gap-2 px-4 py-2 bg-[#408398] text-white rounded-xl text-sm font-semibold hover:bg-[#326e80] transition-colors"
