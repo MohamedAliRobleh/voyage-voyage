@@ -122,7 +122,7 @@ function generateHTML(doc: Facture): string {
       ${isDevis ? `
       <div style="text-align:center;margin-bottom:32px;padding:20px;background:linear-gradient(135deg,#f5f9fb,#e8f4f7);border-radius:12px;border:1px solid #d0e8f0;">
         <p style="font-size:13px;color:#555;margin:0 0 12px;">Pour accepter ce devis, répondez simplement à cet email en indiquant votre accord.</p>
-        <a href="mailto:contact@voyagevoyagedj.com?subject=Acceptation devis ${doc.numero}&body=Bonjour, j'accepte le devis ${doc.numero}."
+        <a href="mailto:voyagevoyagedjib@gmail.com?subject=Acceptation devis ${doc.numero}&body=Bonjour, j'accepte le devis ${doc.numero}."
            style="display:inline-block;padding:12px 28px;background:${accentColor};color:white;text-decoration:none;border-radius:8px;font-weight:700;font-size:13px;">
           ✓ Accepter ce devis
         </a>
