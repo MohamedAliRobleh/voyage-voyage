@@ -3,6 +3,7 @@ import { Resend } from "resend";
 import type { Facture } from "@/lib/supabase";
 
 const resend = new Resend(process.env.RESEND_API_KEY);
+const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL || "https://voyagevoyagedj.com";
 
 function formatMoney(n: number) {
   return `${Number(n).toLocaleString("fr-FR")} DJF`;
@@ -17,6 +18,7 @@ function generateHTML(doc: Facture): string {
   const isDevis = doc.type === "devis";
   const accentColor = isDevis ? "#d97706" : "#408398";
   const total_ht = doc.total;
+  const clientLink = isDevis && doc.token ? `${BASE_URL}/devis/${doc.token}` : null;
 
   return `
 <!DOCTYPE html>
@@ -109,23 +111,26 @@ function generateHTML(doc: Facture): string {
       </div>` : ""}
 
       <!-- Conditions -->
-      <div style="margin-bottom:32px;padding:14px 16px;background:#fafafa;border-radius:8px;">
+      <div style="margin-bottom:${isDevis && clientLink ? "24px" : "32px"};padding:14px 16px;background:#fafafa;border-radius:8px;">
         <p style="font-size:10px;font-weight:700;text-transform:uppercase;color:#888;letter-spacing:1px;margin:0 0 6px;">Conditions</p>
         <p style="font-size:11px;color:#555;line-height:1.8;margin:0;">
           ${isDevis
-            ? `Ce devis est valable ${doc.echeance ? `jusqu'au ${formatDate(doc.echeance)}` : "30 jours à compter de sa date d'émission"}. Pour accepter ce devis, veuillez répondre à cet email. Un acompte de 30% sera demandé à la confirmation.`
+            ? `Ce devis est valable ${doc.echeance ? `jusqu'au ${formatDate(doc.echeance)}` : "30 jours à compter de sa date d'émission"}. Tout devis accepté constitue un engagement contractuel. Un acompte de 30% sera demandé à la confirmation.`
             : "Paiement à réception de facture. Tout retard de paiement entraîne des pénalités conformément aux conditions générales de vente."
           }
         </p>
       </div>
 
-      ${isDevis ? `
-      <div style="text-align:center;margin-bottom:32px;padding:20px;background:linear-gradient(135deg,#f5f9fb,#e8f4f7);border-radius:12px;border:1px solid #d0e8f0;">
-        <p style="font-size:13px;color:#555;margin:0 0 12px;">Pour accepter ce devis, répondez simplement à cet email en indiquant votre accord.</p>
-        <a href="mailto:voyagevoyagedjib@gmail.com?subject=Acceptation devis ${doc.numero}&body=Bonjour, j'accepte le devis ${doc.numero}."
-           style="display:inline-block;padding:12px 28px;background:${accentColor};color:white;text-decoration:none;border-radius:8px;font-weight:700;font-size:13px;">
-          ✓ Accepter ce devis
+      ${isDevis && clientLink ? `
+      <!-- CTA Block -->
+      <div style="text-align:center;margin-bottom:32px;padding:28px 24px;background:linear-gradient(135deg,#f5f9fb,#e8f4f7);border-radius:14px;border:1px solid #d0e8f0;">
+        <p style="font-size:15px;font-weight:700;color:#0e2d38;margin:0 0 8px;">Votre réponse en un clic</p>
+        <p style="font-size:13px;color:#555;margin:0 0 20px;">Acceptez ce devis directement en ligne, ou posez-nous vos questions.</p>
+        <a href="${clientLink}"
+           style="display:inline-block;padding:14px 32px;background:#16a34a;color:white;text-decoration:none;border-radius:10px;font-weight:700;font-size:14px;letter-spacing:0.5px;">
+          Voir et répondre à ce devis →
         </a>
+        <p style="font-size:11px;color:#888;margin:16px 0 0;">Ou copiez ce lien dans votre navigateur :<br/><span style="color:#408398;">${clientLink}</span></p>
       </div>` : ""}
 
     </div>
@@ -134,7 +139,7 @@ function generateHTML(doc: Facture): string {
     <div style="background:#f5f9fb;padding:20px 40px;text-align:center;border-top:1px solid #e8f0f3;">
       <p style="font-size:11px;color:#888;line-height:1.8;margin:0;">
         VOYAGE VOYAGE — Agence de Tourisme — Djibouti-Ville, République de Djibouti<br/>
-        Tél : +253 77 07 33 77 | contact@voyagevoyagedj.com | voyagevoyagedj.com
+        Tél : +253 77 07 33 77 | voyagevoyagedjib@gmail.com | voyagevoyagedj.com
       </p>
     </div>
 
@@ -145,6 +150,7 @@ function generateHTML(doc: Facture): string {
 
 function generateText(doc: Facture): string {
   const isDevis = doc.type === "devis";
+  const clientLink = isDevis && doc.token ? `${BASE_URL}/devis/${doc.token}` : null;
   const lines = doc.lignes.map(l =>
     `- ${l.description} x${l.quantite} @ ${formatMoney(l.prix_unitaire)} = ${formatMoney(l.quantite * l.prix_unitaire)}`
   ).join("\n");
@@ -161,11 +167,11 @@ ${lines}
 
 TOTAL : ${formatMoney(doc.total)}
 
-${doc.notes ? `Notes : ${doc.notes}\n\n` : ""}${isDevis ? `Pour accepter ce devis, répondez à cet email ou écrivez à voyagevoyagedjib@gmail.com en indiquant votre accord.` : `Paiement à réception de facture.`}
+${doc.notes ? `Notes : ${doc.notes}\n\n` : ""}${clientLink ? `Pour accepter ce devis ou poser une question :\n${clientLink}` : "Paiement à réception de facture."}
 
 Cordialement,
 Voyage Voyage
-contact@voyagevoyagedj.com | +253 77 07 33 77`;
+voyagevoyagedjib@gmail.com | +253 77 07 33 77`;
 }
 
 export async function POST(req: NextRequest) {

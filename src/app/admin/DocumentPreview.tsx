@@ -126,7 +126,7 @@ export default function DocumentPreview({ document: doc, onClose }: Props) {
       {/* Backdrop */}
       <motion.div
         initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-        className="fixed inset-0 bg-black/60 z-50 backdrop-blur-sm"
+        className="fixed inset-0 bg-black/60 z-[60] backdrop-blur-sm"
         onClick={onClose}
       />
 
@@ -135,7 +135,8 @@ export default function DocumentPreview({ document: doc, onClose }: Props) {
         initial={{ opacity: 0, scale: 0.97, y: 20 }}
         animate={{ opacity: 1, scale: 1, y: 0 }}
         exit={{ opacity: 0, scale: 0.97, y: 20 }}
-        className="fixed inset-4 z-50 flex flex-col bg-gray-100 rounded-2xl shadow-2xl overflow-hidden"
+        className="fixed inset-4 z-[61] flex flex-col bg-gray-100 rounded-2xl shadow-2xl overflow-hidden"
+        onClick={e => e.stopPropagation()}
       >
         {/* Toolbar */}
         <div className="flex items-center justify-between px-6 py-3 bg-white border-b border-gray-200 shrink-0">

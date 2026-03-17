@@ -9,9 +9,12 @@ import toast from "react-hot-toast";
 import DocumentPreview from "./DocumentPreview";
 
 const statutConfig = {
-  brouillon: { label: "Brouillon", bg: "bg-gray-100", text: "text-gray-500", dot: "bg-gray-400" },
-  envoyé:    { label: "Envoyé",    bg: "bg-blue-50",  text: "text-blue-600",  dot: "bg-blue-500" },
-  payé:      { label: "Payé",      bg: "bg-emerald-50", text: "text-emerald-600", dot: "bg-emerald-500" },
+  brouillon:      { label: "Brouillon",      bg: "bg-gray-100",    text: "text-gray-500",    dot: "bg-gray-400" },
+  envoyé:         { label: "Envoyé",         bg: "bg-blue-50",     text: "text-blue-600",    dot: "bg-blue-500" },
+  accepté:        { label: "Accepté ✓",      bg: "bg-emerald-50",  text: "text-emerald-600", dot: "bg-emerald-500" },
+  en_negociation: { label: "En discussion",  bg: "bg-amber-50",    text: "text-amber-600",   dot: "bg-amber-400" },
+  confirmé:       { label: "Confirmé",       bg: "bg-purple-50",   text: "text-purple-600",  dot: "bg-purple-500" },
+  payé:           { label: "Payé",           bg: "bg-teal-50",     text: "text-teal-600",    dot: "bg-teal-500" },
 };
 
 const emptyLigne: LigneFacture = { description: "", quantite: 1, prix_unitaire: 0, total: 0 };
@@ -80,12 +83,14 @@ export default function FacturesSection() {
     if (lignesValides.length === 0) { toast.error("Ajoutez au moins une prestation"); return; }
     const numero = generateNumero(factures, formType);
     const total = totalLignes(lignesValides);
+    const token = crypto.randomUUID();
     const { error } = await supabase.from("factures").insert({
       numero, type: formType,
       client_id: form.client_id || null,
       client_nom: form.client_nom, client_email: form.client_email,
       date: form.date, echeance: form.echeance || null,
       statut: "brouillon", lignes: lignesValides, total, notes: form.notes,
+      token,
     });
     if (error) { toast.error("Erreur lors de la création"); return; }
     toast.success(`${formType === "devis" ? "Devis" : "Facture"} ${numero} créé(e)`);

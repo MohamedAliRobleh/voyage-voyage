@@ -31,9 +31,11 @@ export type Facture = {
   client_email: string;
   date: string;
   echeance: string;
-  statut: "brouillon" | "envoyé" | "payé";
+  statut: "brouillon" | "envoyé" | "accepté" | "en_negociation" | "confirmé" | "payé";
   lignes: LigneFacture[];
   total: number;
   notes: string;
+  token: string;
+  client_message: string;
   created_at: string;
 };
