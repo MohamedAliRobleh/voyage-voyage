@@ -1,9 +1,15 @@
 import { NextRequest, NextResponse } from "next/server";
 import { Resend } from "resend";
+import { createClient } from "@supabase/supabase-js";
 import type { Facture } from "@/lib/supabase";
 
 const resend = new Resend(process.env.RESEND_API_KEY);
 const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL || "https://voyagevoyagedj.com";
+
+const supabaseAdmin = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL!,
+  process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+);
 
 function formatMoney(n: number) {
   return `${Number(n).toLocaleString("fr-FR")} DJF`;
@@ -201,6 +207,14 @@ export async function POST(req: NextRequest) {
 
   if (error) {
     return NextResponse.json({ error: error.message }, { status: 500 });
+  }
+
+  // Auto-update status to "envoyé" when email is sent
+  if (document.id) {
+    await supabaseAdmin
+      .from("factures")
+      .update({ statut: "envoyé" })
+      .eq("id", document.id);
   }
 
   return NextResponse.json({ success: true });
