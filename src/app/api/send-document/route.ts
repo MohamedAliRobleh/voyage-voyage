@@ -1,16 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
-import nodemailer from "nodemailer";
+import { Resend } from "resend";
 import type { Facture } from "@/lib/supabase";
 
-const transporter = nodemailer.createTransport({
-  host: "ssl0.ovh.net",
-  port: 465,
-  secure: true,
-  auth: {
-    user: process.env.OVH_EMAIL,
-    pass: process.env.OVH_PASSWORD,
-  },
-});
+const resend = new Resend(process.env.RESEND_API_KEY);
 
 function formatMoney(n: number) {
   return `${Number(n).toLocaleString("fr-FR")} DJF`;
@@ -163,13 +155,17 @@ export async function POST(req: NextRequest) {
     ? `Devis ${document.numero} — Voyage Voyage`
     : `Facture ${document.numero} — Voyage Voyage`;
 
-  await transporter.sendMail({
-    from: `"Voyage Voyage" <${process.env.OVH_EMAIL}>`,
+  const { error } = await resend.emails.send({
+    from: "Voyage Voyage <contact@voyagevoyagedj.com>",
     to: document.client_email,
     replyTo: "contact@voyagevoyagedj.com",
     subject,
     html: generateHTML(document),
   });
+
+  if (error) {
+    return NextResponse.json({ error: error.message }, { status: 500 });
+  }
 
   return NextResponse.json({ success: true });
 }
