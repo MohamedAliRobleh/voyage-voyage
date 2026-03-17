@@ -3,15 +3,15 @@
 import { useState, useEffect } from "react";
 import { supabase } from "@/lib/supabase";
 import type { Client, Facture, LigneFacture } from "@/lib/supabase";
-import { Plus, Trash2, X, FileText, ChevronRight, Check, Clock, Send, Eye } from "lucide-react";
+import { Plus, Trash2, X, FileText, Check, Send, Eye, TrendingUp, Clock, ArrowRight } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import toast from "react-hot-toast";
 import DocumentPreview from "./DocumentPreview";
 
 const statutConfig = {
-  brouillon: { label: "Brouillon", color: "bg-gray-100 text-gray-600", icon: Clock },
-  envoyé: { label: "Envoyé", color: "bg-blue-50 text-blue-600", icon: Send },
-  payé: { label: "Payé", color: "bg-green-50 text-green-600", icon: Check },
+  brouillon: { label: "Brouillon", bg: "bg-gray-100", text: "text-gray-500", dot: "bg-gray-400" },
+  envoyé:    { label: "Envoyé",    bg: "bg-blue-50",  text: "text-blue-600",  dot: "bg-blue-500" },
+  payé:      { label: "Payé",      bg: "bg-emerald-50", text: "text-emerald-600", dot: "bg-emerald-500" },
 };
 
 const emptyLigne: LigneFacture = { description: "", quantite: 1, prix_unitaire: 0, total: 0 };
@@ -30,7 +30,7 @@ export default function FacturesSection() {
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
   const [formType, setFormType] = useState<"facture" | "devis">("facture");
-  const [viewFacture, setViewFacture] = useState<Facture | null>(null);
+  const [selected, setSelected] = useState<Facture | null>(null);
   const [previewDoc, setPreviewDoc] = useState<Facture | null>(null);
   const [filterType, setFilterType] = useState<"all" | "facture" | "devis">("all");
 
@@ -73,342 +73,400 @@ export default function FacturesSection() {
     setForm({ ...form, lignes: newLignes });
   };
 
-  const addLigne = () => setForm({ ...form, lignes: [...form.lignes, { ...emptyLigne }] });
-
-  const removeLigne = (i: number) => {
-    if (form.lignes.length === 1) return;
-    setForm({ ...form, lignes: form.lignes.filter((_, idx) => idx !== i) });
-  };
-
-  const selectClient = (clientId: string) => {
-    const c = clients.find(c => c.id === clientId);
-    setForm({ ...form, client_id: clientId, client_nom: c?.nom || "", client_email: c?.email || "" });
-  };
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!form.client_nom) { toast.error("Sélectionnez ou entrez un client"); return; }
     const lignesValides = form.lignes.filter(l => l.description.trim());
     if (lignesValides.length === 0) { toast.error("Ajoutez au moins une prestation"); return; }
-
     const numero = generateNumero(factures, formType);
     const total = totalLignes(lignesValides);
-
     const { error } = await supabase.from("factures").insert({
-      numero,
-      type: formType,
+      numero, type: formType,
       client_id: form.client_id || null,
-      client_nom: form.client_nom,
-      client_email: form.client_email,
-      date: form.date,
-      echeance: form.echeance || null,
-      statut: "brouillon",
-      lignes: lignesValides,
-      total,
-      notes: form.notes,
+      client_nom: form.client_nom, client_email: form.client_email,
+      date: form.date, echeance: form.echeance || null,
+      statut: "brouillon", lignes: lignesValides, total, notes: form.notes,
     });
-
     if (error) { toast.error("Erreur lors de la création"); return; }
-    toast.success(`${formType === "devis" ? "Devis" : "Facture"} ${numero} créé(e) ✓`);
+    toast.success(`${formType === "devis" ? "Devis" : "Facture"} ${numero} créé(e)`);
     setShowForm(false);
     loadData();
   };
 
   const changeStatut = async (id: string, statut: Facture["statut"]) => {
     await supabase.from("factures").update({ statut }).eq("id", id);
-    toast.success(`Statut : ${statutConfig[statut].label}`);
+    toast.success(`Statut mis à jour : ${statutConfig[statut].label}`);
     loadData();
-    if (viewFacture?.id === id) setViewFacture({ ...viewFacture, statut });
+    if (selected?.id === id) setSelected({ ...selected, statut });
   };
 
   const deleteFacture = async (id: string) => {
     if (!confirm("Supprimer ce document ?")) return;
     await supabase.from("factures").delete().eq("id", id);
-    toast.success("Supprimé");
-    setViewFacture(null);
+    toast.success("Document supprimé");
+    setSelected(null);
     loadData();
   };
 
   const fmt = (n: number) => `${Number(n).toLocaleString("fr-FR")} DJF`;
-
+  const fmtDate = (d: string) => d ? new Date(d).toLocaleDateString("fr-FR") : "—";
   const filtered = factures.filter(f => filterType === "all" || f.type === filterType);
 
+  // Stats
+  const totalFactures = factures.filter(f => f.type === "factures").length;
+  const totalDevis = factures.filter(f => f.type === "devis").length;
+  const totalPaye = factures.filter(f => f.statut === "payé").reduce((s, f) => s + f.total, 0);
+  const totalEnAttente = factures.filter(f => f.statut !== "payé").reduce((s, f) => s + f.total, 0);
+
   return (
-    <div className="space-y-4">
-      {/* Toolbar */}
-      <div className="flex items-center justify-between gap-3 flex-wrap">
-        {/* Filter tabs */}
-        <div className="flex gap-1 bg-gray-100 rounded-xl p-1">
-          {([["all", "Tous"], ["facture", "Factures"], ["devis", "Devis"]] as const).map(([v, l]) => (
-            <button key={v} onClick={() => setFilterType(v)}
-              className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${filterType === v ? "bg-white shadow text-gray-900" : "text-gray-400 hover:text-gray-600"}`}>
-              {l}
-            </button>
+    <div className="flex gap-0 h-full">
+      {/* Left: main list */}
+      <div className={`flex-1 min-w-0 flex flex-col gap-5 transition-all ${selected ? "pr-0" : ""}`}>
+
+        {/* KPI cards */}
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+          {[
+            { label: "Documents", value: factures.length, icon: FileText, color: "text-[#408398]", bg: "bg-[#408398]/8" },
+            { label: "En attente", value: fmt(totalEnAttente), icon: Clock, color: "text-amber-500", bg: "bg-amber-50" },
+            { label: "Encaissé", value: fmt(totalPaye), icon: TrendingUp, color: "text-emerald-600", bg: "bg-emerald-50" },
+            { label: "Devis actifs", value: totalDevis, icon: Send, color: "text-purple-500", bg: "bg-purple-50" },
+          ].map(({ label, value, icon: Icon, color, bg }) => (
+            <div key={label} className="bg-white rounded-2xl border border-gray-100 px-4 py-3.5 flex items-center gap-3">
+              <div className={`w-9 h-9 rounded-xl ${bg} flex items-center justify-center shrink-0`}>
+                <Icon size={16} className={color} />
+              </div>
+              <div>
+                <p className="text-[11px] text-gray-400 font-medium">{label}</p>
+                <p className="text-sm font-bold text-gray-900 leading-tight">{value}</p>
+              </div>
+            </div>
           ))}
         </div>
 
-        {/* Action buttons */}
-        <div className="flex gap-2">
-          <button onClick={() => openForm("devis")}
-            className="flex items-center gap-2 px-4 py-2 bg-amber-500 text-white rounded-xl text-sm font-semibold hover:bg-amber-600 transition-colors">
-            <Plus size={15} />
-            Nouveau devis
-          </button>
-          <button onClick={() => openForm("facture")}
-            className="flex items-center gap-2 px-4 py-2 bg-[#408398] text-white rounded-xl text-sm font-semibold hover:bg-[#326e80] transition-colors">
-            <Plus size={15} />
-            Nouvelle facture
-          </button>
+        {/* Toolbar */}
+        <div className="flex items-center justify-between gap-3">
+          <div className="flex bg-gray-100 rounded-xl p-1 gap-0.5">
+            {([["all", "Tous"], ["facture", "Factures"], ["devis", "Devis"]] as const).map(([v, l]) => (
+              <button key={v} onClick={() => setFilterType(v)}
+                className={`px-3.5 py-1.5 rounded-lg text-xs font-semibold transition-all ${filterType === v ? "bg-white shadow-sm text-gray-900" : "text-gray-400 hover:text-gray-600"}`}>
+                {l}
+              </button>
+            ))}
+          </div>
+          <div className="flex gap-2">
+            <button onClick={() => openForm("devis")}
+              className="flex items-center gap-1.5 px-3.5 py-2 bg-amber-500 text-white rounded-xl text-xs font-semibold hover:bg-amber-600 transition-colors">
+              <Plus size={13} /> Nouveau devis
+            </button>
+            <button onClick={() => openForm("facture")}
+              className="flex items-center gap-1.5 px-3.5 py-2 bg-[#0e2d38] text-white rounded-xl text-xs font-semibold hover:bg-[#1a3f50] transition-colors">
+              <Plus size={13} /> Nouvelle facture
+            </button>
+          </div>
         </div>
-      </div>
 
-      {/* List */}
-      <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
-        {loading ? (
-          <div className="flex items-center justify-center py-16">
-            <div className="w-6 h-6 border-2 border-[#408398]/30 border-t-[#408398] rounded-full animate-spin" />
+        {/* Table */}
+        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+          {/* Table header */}
+          <div className="grid grid-cols-12 px-5 py-2.5 border-b border-gray-50 bg-gray-50/60">
+            <span className="col-span-3 text-[10px] font-bold uppercase tracking-wider text-gray-400">N° Document</span>
+            <span className="col-span-3 text-[10px] font-bold uppercase tracking-wider text-gray-400">Client</span>
+            <span className="col-span-2 text-[10px] font-bold uppercase tracking-wider text-gray-400">Date</span>
+            <span className="col-span-2 text-[10px] font-bold uppercase tracking-wider text-gray-400">Statut</span>
+            <span className="col-span-2 text-[10px] font-bold uppercase tracking-wider text-gray-400 text-right">Total</span>
           </div>
-        ) : filtered.length === 0 ? (
-          <div className="text-center py-16 text-gray-400">
-            <FileText size={32} className="mx-auto mb-3 opacity-30" />
-            <p className="text-sm">Aucun document — créez un devis ou une facture !</p>
-          </div>
-        ) : (
-          filtered.map((facture, i) => {
-            const s = statutConfig[facture.statut as keyof typeof statutConfig] || statutConfig.brouillon;
-            const isDevis = facture.type === "devis";
+
+          {loading ? (
+            <div className="flex items-center justify-center py-16">
+              <div className="w-5 h-5 border-2 border-[#408398]/30 border-t-[#408398] rounded-full animate-spin" />
+            </div>
+          ) : filtered.length === 0 ? (
+            <div className="text-center py-16">
+              <FileText size={28} className="mx-auto mb-3 text-gray-200" />
+              <p className="text-sm text-gray-400">Aucun document</p>
+              <p className="text-xs text-gray-300 mt-1">Créez un devis ou une facture pour commencer</p>
+            </div>
+          ) : filtered.map((f, i) => {
+            const s = statutConfig[f.statut as keyof typeof statutConfig] || statutConfig.brouillon;
+            const isDevis = f.type === "devis";
+            const isActive = selected?.id === f.id;
             return (
-              <div key={facture.id}
-                className={`flex items-center justify-between px-5 py-4 hover:bg-gray-50 transition-colors ${i < filtered.length - 1 ? "border-b border-gray-50" : ""}`}>
-                <div className="flex items-center gap-3 cursor-pointer flex-1" onClick={() => setViewFacture(facture)}>
-                  <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 ${isDevis ? "bg-amber-50" : "bg-[#408398]/10"}`}>
-                    <FileText size={16} className={isDevis ? "text-amber-500" : "text-[#408398]"} />
+              <div key={f.id} onClick={() => setSelected(isActive ? null : f)}
+                className={`grid grid-cols-12 items-center px-5 py-3.5 cursor-pointer transition-all border-b border-gray-50 last:border-0 group
+                  ${isActive ? "bg-[#408398]/5 border-l-2 border-l-[#408398]" : "hover:bg-gray-50/70"}`}>
+                <div className="col-span-3 flex items-center gap-2.5">
+                  <div className={`w-7 h-7 rounded-lg flex items-center justify-center shrink-0 ${isDevis ? "bg-amber-50" : "bg-[#408398]/8"}`}>
+                    <FileText size={12} className={isDevis ? "text-amber-500" : "text-[#408398]"} />
                   </div>
                   <div>
-                    <div className="flex items-center gap-2 flex-wrap">
-                      <p className="font-semibold text-gray-900 text-sm">{facture.numero}</p>
-                      <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${isDevis ? "bg-amber-100 text-amber-700" : "bg-[#408398]/10 text-[#408398]"}`}>
-                        {isDevis ? "DEVIS" : "FACTURE"}
-                      </span>
-                      <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full ${s.color}`}>{s.label}</span>
-                    </div>
-                    <p className="text-xs text-gray-400 mt-0.5">{facture.client_nom} — {new Date(facture.date).toLocaleDateString("fr-FR")}</p>
+                    <p className="text-xs font-bold text-gray-900">{f.numero}</p>
+                    <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded ${isDevis ? "bg-amber-100 text-amber-600" : "bg-[#408398]/10 text-[#408398]"}`}>
+                      {isDevis ? "DEVIS" : "FACTURE"}
+                    </span>
                   </div>
                 </div>
-                <div className="flex items-center gap-3">
-                  <p className="font-bold text-gray-900 text-sm">{fmt(facture.total)}</p>
-                  <button
-                    onClick={(e) => { e.stopPropagation(); setPreviewDoc(facture); }}
-                    className="p-2 text-gray-400 hover:text-[#408398] hover:bg-[#408398]/10 rounded-lg transition-colors"
-                    title="Aperçu"
-                  >
-                    <Eye size={15} />
+                <div className="col-span-3">
+                  <p className="text-xs font-semibold text-gray-800 truncate">{f.client_nom}</p>
+                  {f.client_email && <p className="text-[10px] text-gray-400 truncate">{f.client_email}</p>}
+                </div>
+                <div className="col-span-2">
+                  <p className="text-xs text-gray-600">{fmtDate(f.date)}</p>
+                </div>
+                <div className="col-span-2">
+                  <span className={`inline-flex items-center gap-1 text-[10px] font-semibold px-2 py-1 rounded-full ${s.bg} ${s.text}`}>
+                    <span className={`w-1.5 h-1.5 rounded-full ${s.dot}`} />
+                    {s.label}
+                  </span>
+                </div>
+                <div className="col-span-2 flex items-center justify-end gap-2">
+                  <p className="text-xs font-bold text-gray-900">{fmt(f.total)}</p>
+                  <button onClick={e => { e.stopPropagation(); setPreviewDoc(f); }}
+                    className="opacity-0 group-hover:opacity-100 p-1.5 text-gray-400 hover:text-[#408398] hover:bg-[#408398]/10 rounded-lg transition-all">
+                    <Eye size={13} />
                   </button>
-                  <ChevronRight size={14} className="text-gray-300 cursor-pointer" onClick={() => setViewFacture(facture)} />
+                  <ArrowRight size={13} className={`transition-colors ${isActive ? "text-[#408398]" : "text-gray-200 group-hover:text-gray-400"}`} />
                 </div>
               </div>
             );
-          })
-        )}
+          })}
+        </div>
       </div>
+
+      {/* Right: detail panel */}
+      <AnimatePresence>
+        {selected && (
+          <motion.div
+            initial={{ opacity: 0, x: 20, width: 0 }}
+            animate={{ opacity: 1, x: 0, width: 340 }}
+            exit={{ opacity: 0, x: 20, width: 0 }}
+            className="shrink-0 overflow-hidden"
+          >
+            <div className="w-[340px] ml-4 bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden flex flex-col h-fit sticky top-0">
+              {/* Panel header */}
+              <div className="px-5 py-4 border-b border-gray-100 flex items-center justify-between">
+                <div>
+                  <div className="flex items-center gap-2 mb-0.5">
+                    <span className={`text-[9px] font-bold px-2 py-0.5 rounded ${selected.type === "devis" ? "bg-amber-100 text-amber-600" : "bg-[#408398]/10 text-[#408398]"}`}>
+                      {selected.type === "devis" ? "DEVIS" : "FACTURE"}
+                    </span>
+                    <span className="text-sm font-bold text-gray-900">{selected.numero}</span>
+                  </div>
+                  <p className="text-xs text-gray-400">{selected.client_nom}</p>
+                </div>
+                <button onClick={() => setSelected(null)} className="p-1.5 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors">
+                  <X size={15} />
+                </button>
+              </div>
+
+              <div className="p-5 space-y-5 overflow-y-auto">
+                {/* Statut */}
+                <div>
+                  <p className="text-[10px] font-bold uppercase tracking-wider text-gray-400 mb-2">Statut</p>
+                  <div className="flex gap-1.5">
+                    {(Object.keys(statutConfig) as Array<keyof typeof statutConfig>).map(s => {
+                      const cfg = statutConfig[s];
+                      const active = selected.statut === s;
+                      return (
+                        <button key={s} onClick={() => changeStatut(selected.id, s)}
+                          className={`flex-1 flex items-center justify-center gap-1 py-2 rounded-xl text-[10px] font-semibold border transition-all
+                            ${active ? `${cfg.bg} ${cfg.text} border-transparent` : "border-gray-200 text-gray-400 hover:border-gray-300 hover:text-gray-500"}`}>
+                          {active && <Check size={10} />}
+                          {cfg.label}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                {/* Infos */}
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="bg-gray-50 rounded-xl p-3">
+                    <p className="text-[9px] font-bold uppercase tracking-wider text-gray-400 mb-1">Client</p>
+                    <p className="text-xs font-semibold text-gray-900">{selected.client_nom}</p>
+                    {selected.client_email && <p className="text-[10px] text-gray-400 mt-0.5 truncate">{selected.client_email}</p>}
+                  </div>
+                  <div className="bg-gray-50 rounded-xl p-3">
+                    <p className="text-[9px] font-bold uppercase tracking-wider text-gray-400 mb-1">Date</p>
+                    <p className="text-xs font-semibold text-gray-900">{fmtDate(selected.date)}</p>
+                    {selected.echeance && (
+                      <p className="text-[10px] text-gray-400 mt-0.5">
+                        {selected.type === "devis" ? "Valide jusqu'au" : "Éch."} {fmtDate(selected.echeance)}
+                      </p>
+                    )}
+                  </div>
+                </div>
+
+                {/* Lignes */}
+                <div>
+                  <p className="text-[10px] font-bold uppercase tracking-wider text-gray-400 mb-2">Prestations</p>
+                  <div className="rounded-xl overflow-hidden border border-gray-100">
+                    {selected.lignes.map((l, i) => (
+                      <div key={i} className="flex items-center justify-between px-3.5 py-2.5 border-b border-gray-50 last:border-0 bg-white hover:bg-gray-50/50 transition-colors">
+                        <div className="flex-1 min-w-0">
+                          <p className="text-xs text-gray-800 truncate">{l.description}</p>
+                          <p className="text-[10px] text-gray-400">×{l.quantite} · {fmt(l.prix_unitaire)}</p>
+                        </div>
+                        <p className="text-xs font-bold text-gray-900 ml-3 shrink-0">{fmt(l.quantite * l.prix_unitaire)}</p>
+                      </div>
+                    ))}
+                    <div className="flex items-center justify-between px-3.5 py-3 bg-[#0e2d38]">
+                      <span className="text-xs font-bold text-white/70">Total TTC</span>
+                      <span className="text-sm font-bold text-white">{fmt(selected.total)}</span>
+                    </div>
+                  </div>
+                </div>
+
+                {selected.notes && (
+                  <div className="bg-gray-50 rounded-xl p-3">
+                    <p className="text-[9px] font-bold uppercase tracking-wider text-gray-400 mb-1.5">Notes</p>
+                    <p className="text-xs text-gray-600 leading-relaxed">{selected.notes}</p>
+                  </div>
+                )}
+
+                {/* Actions */}
+                <div className="flex flex-col gap-2 pt-1">
+                  <button onClick={() => { setPreviewDoc(selected); setSelected(null); }}
+                    className="flex items-center justify-center gap-2 py-2.5 bg-[#408398] text-white rounded-xl text-xs font-semibold hover:bg-[#326e80] transition-colors">
+                    <Eye size={13} /> Aperçu & Envoi
+                  </button>
+                  <button onClick={() => deleteFacture(selected.id)}
+                    className="flex items-center justify-center gap-2 py-2.5 border border-red-200 text-red-400 rounded-xl text-xs font-medium hover:bg-red-50 transition-colors">
+                    <Trash2 size={13} /> Supprimer
+                  </button>
+                </div>
+              </div>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* Create Form Modal */}
       <AnimatePresence>
         {showForm && (
           <>
-            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 bg-black/50 z-50" onClick={() => setShowForm(false)} />
-            <motion.div initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 30 }} className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4">
-              <div className="bg-white rounded-t-2xl sm:rounded-2xl shadow-2xl w-full sm:max-w-2xl max-h-[90vh] overflow-y-auto">
-                <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100 sticky top-0 bg-white z-10">
+            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+              className="fixed inset-0 bg-black/40 backdrop-blur-sm z-50" onClick={() => setShowForm(false)} />
+            <motion.div initial={{ opacity: 0, y: 40 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 40 }}
+              className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-6">
+              <div className="bg-white rounded-t-3xl sm:rounded-2xl shadow-2xl w-full sm:max-w-xl max-h-[92vh] overflow-y-auto">
+
+                {/* Modal header */}
+                <div className="sticky top-0 bg-white z-10 px-6 py-4 border-b border-gray-100 flex items-center justify-between rounded-t-3xl sm:rounded-t-2xl">
                   <div className="flex items-center gap-3">
-                    <span className={`text-xs font-bold px-3 py-1 rounded-full ${formType === "devis" ? "bg-amber-100 text-amber-700" : "bg-[#408398]/10 text-[#408398]"}`}>
-                      {formType === "devis" ? "DEVIS" : "FACTURE"}
-                    </span>
-                    <h3 className="font-bold text-gray-900">
-                      {formType === "devis" ? "Nouveau devis" : "Nouvelle facture"}
-                    </h3>
+                    <div className={`w-8 h-8 rounded-xl flex items-center justify-center ${formType === "devis" ? "bg-amber-100" : "bg-[#408398]/10"}`}>
+                      <FileText size={14} className={formType === "devis" ? "text-amber-600" : "text-[#408398]"} />
+                    </div>
+                    <div>
+                      <h3 className="text-sm font-bold text-gray-900">
+                        {formType === "devis" ? "Nouveau devis" : "Nouvelle facture"}
+                      </h3>
+                      <p className="text-[10px] text-gray-400">Remplissez les informations ci-dessous</p>
+                    </div>
                   </div>
-                  <button onClick={() => setShowForm(false)} className="text-gray-400 hover:text-gray-600"><X size={18} /></button>
+                  <button onClick={() => setShowForm(false)} className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-xl transition-colors">
+                    <X size={16} />
+                  </button>
                 </div>
 
-                <form onSubmit={handleSubmit} className="p-6 space-y-6">
+                <form onSubmit={handleSubmit} className="px-6 py-5 space-y-5">
+
                   {/* Client */}
-                  <div>
-                    <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">Client *</label>
+                  <div className="space-y-2">
+                    <label className="text-[10px] font-bold uppercase tracking-wider text-gray-400">Client *</label>
                     {clients.length > 0 && (
-                      <select value={form.client_id} onChange={e => selectClient(e.target.value)}
-                        className="w-full px-3 py-2.5 border border-gray-200 rounded-xl text-sm text-gray-900 focus:outline-none focus:border-[#408398] bg-white mb-2">
+                      <select value={form.client_id}
+                        onChange={e => {
+                          const c = clients.find(c => c.id === e.target.value);
+                          setForm({ ...form, client_id: e.target.value, client_nom: c?.nom || "", client_email: c?.email || "" });
+                        }}
+                        className="w-full px-3.5 py-2.5 border border-gray-200 rounded-xl text-sm text-gray-900 focus:outline-none focus:border-[#408398] bg-white">
                         <option value="">Sélectionner un client existant...</option>
                         {clients.map(c => <option key={c.id} value={c.id}>{c.nom}{c.email ? ` — ${c.email}` : ""}</option>)}
                       </select>
                     )}
-                    <div className="grid grid-cols-2 gap-3">
+                    <div className="grid grid-cols-2 gap-2.5">
                       <input value={form.client_nom} onChange={e => setForm({ ...form, client_nom: e.target.value })}
                         placeholder="Nom du client *"
-                        className="px-3 py-2.5 border border-gray-200 rounded-xl text-sm text-gray-900 focus:outline-none focus:border-[#408398]" />
+                        className="px-3.5 py-2.5 border border-gray-200 rounded-xl text-sm text-gray-900 focus:outline-none focus:border-[#408398]" />
                       <input type="email" value={form.client_email} onChange={e => setForm({ ...form, client_email: e.target.value })}
-                        placeholder="Email du client"
-                        className="px-3 py-2.5 border border-gray-200 rounded-xl text-sm text-gray-900 focus:outline-none focus:border-[#408398]" />
+                        placeholder="Email client"
+                        className="px-3.5 py-2.5 border border-gray-200 rounded-xl text-sm text-gray-900 focus:outline-none focus:border-[#408398]" />
                     </div>
                   </div>
 
                   {/* Dates */}
-                  <div className="grid grid-cols-2 gap-3">
+                  <div className="grid grid-cols-2 gap-2.5">
                     <div>
-                      <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1.5">Date d&apos;émission</label>
+                      <label className="block text-[10px] font-bold uppercase tracking-wider text-gray-400 mb-1.5">Date d&apos;émission</label>
                       <input type="date" value={form.date} onChange={e => setForm({ ...form, date: e.target.value })}
-                        className="w-full px-3 py-2.5 border border-gray-200 rounded-xl text-sm text-gray-900 focus:outline-none focus:border-[#408398]" />
+                        className="w-full px-3.5 py-2.5 border border-gray-200 rounded-xl text-sm text-gray-900 focus:outline-none focus:border-[#408398]" />
                     </div>
                     <div>
-                      <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1.5">
-                        {formType === "devis" ? "Validité jusqu'au" : "Date d'échéance"}
+                      <label className="block text-[10px] font-bold uppercase tracking-wider text-gray-400 mb-1.5">
+                        {formType === "devis" ? "Validité jusqu'au" : "Échéance"}
                       </label>
                       <input type="date" value={form.echeance} onChange={e => setForm({ ...form, echeance: e.target.value })}
-                        className="w-full px-3 py-2.5 border border-gray-200 rounded-xl text-sm text-gray-900 focus:outline-none focus:border-[#408398]" />
+                        className="w-full px-3.5 py-2.5 border border-gray-200 rounded-xl text-sm text-gray-900 focus:outline-none focus:border-[#408398]" />
                     </div>
                   </div>
 
                   {/* Lignes */}
                   <div>
-                    <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">Prestations / Services</label>
-                    <div className="space-y-2">
-                      <div className="grid grid-cols-12 gap-2 text-xs font-semibold text-gray-400 px-1">
-                        <span className="col-span-6">Description</span>
-                        <span className="col-span-2 text-center">Qté</span>
-                        <span className="col-span-3">Prix unit. (DJF)</span>
+                    <label className="block text-[10px] font-bold uppercase tracking-wider text-gray-400 mb-2">Prestations *</label>
+                    <div className="rounded-xl border border-gray-200 overflow-hidden">
+                      <div className="grid grid-cols-12 gap-0 bg-gray-50 px-3 py-2 border-b border-gray-200">
+                        <span className="col-span-6 text-[10px] font-semibold text-gray-400">Description</span>
+                        <span className="col-span-2 text-[10px] font-semibold text-gray-400 text-center">Qté</span>
+                        <span className="col-span-3 text-[10px] font-semibold text-gray-400 text-right">Prix (DJF)</span>
                       </div>
                       {form.lignes.map((ligne, i) => (
-                        <div key={i} className="grid grid-cols-12 gap-2 items-center">
+                        <div key={i} className="grid grid-cols-12 gap-0 items-center border-b border-gray-100 last:border-0">
                           <input value={ligne.description} onChange={e => updateLigne(i, "description", e.target.value)}
-                            placeholder="Ex: Safari Lac Assal (2 jours)"
-                            className="col-span-6 px-3 py-2 border border-gray-200 rounded-lg text-sm text-gray-900 focus:outline-none focus:border-[#408398]" />
+                            placeholder="Ex: Safari Lac Assal"
+                            className="col-span-6 px-3 py-2.5 text-sm text-gray-900 focus:outline-none focus:bg-blue-50/30 border-r border-gray-100 bg-white" />
                           <input type="number" min="1" value={ligne.quantite} onChange={e => updateLigne(i, "quantite", Number(e.target.value))}
-                            className="col-span-2 px-3 py-2 border border-gray-200 rounded-lg text-sm text-gray-900 focus:outline-none focus:border-[#408398] text-center" />
+                            className="col-span-2 px-2 py-2.5 text-sm text-gray-900 focus:outline-none focus:bg-blue-50/30 text-center border-r border-gray-100 bg-white" />
                           <input type="number" min="0" value={ligne.prix_unitaire} onChange={e => updateLigne(i, "prix_unitaire", Number(e.target.value))}
                             placeholder="0"
-                            className="col-span-3 px-3 py-2 border border-gray-200 rounded-lg text-sm text-gray-900 focus:outline-none focus:border-[#408398]" />
-                          <button type="button" onClick={() => removeLigne(i)} className="col-span-1 flex items-center justify-center text-gray-300 hover:text-red-400 transition-colors">
-                            <X size={14} />
+                            className="col-span-3 px-3 py-2.5 text-sm text-gray-900 focus:outline-none focus:bg-blue-50/30 text-right border-r border-gray-100 bg-white" />
+                          <button type="button" onClick={() => form.lignes.length > 1 && setForm({ ...form, lignes: form.lignes.filter((_, idx) => idx !== i) })}
+                            className="col-span-1 flex items-center justify-center py-2.5 text-gray-300 hover:text-red-400 transition-colors bg-white">
+                            <X size={12} />
                           </button>
                         </div>
                       ))}
                     </div>
-                    <button type="button" onClick={addLigne} className="mt-2 flex items-center gap-1.5 text-xs text-[#408398] font-medium hover:underline">
-                      <Plus size={12} /> Ajouter une ligne
+                    <button type="button" onClick={() => setForm({ ...form, lignes: [...form.lignes, { ...emptyLigne }] })}
+                      className="mt-2 flex items-center gap-1 text-xs text-[#408398] font-medium hover:underline">
+                      <Plus size={11} /> Ajouter une ligne
                     </button>
-
-                    <div className="mt-4 flex justify-end">
-                      <div className="bg-gray-50 rounded-xl px-5 py-3 text-right">
-                        <p className="text-xs text-gray-400 mb-0.5">Total</p>
-                        <p className="text-xl font-bold text-gray-900">{fmt(totalLignes(form.lignes))}</p>
+                    <div className="mt-3 flex justify-end">
+                      <div className="bg-[#0e2d38] rounded-xl px-4 py-2.5 flex items-center gap-6">
+                        <span className="text-xs text-white/60">Total TTC</span>
+                        <span className="text-base font-bold text-white">{fmt(totalLignes(form.lignes))}</span>
                       </div>
                     </div>
                   </div>
 
                   {/* Notes */}
                   <div>
-                    <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1.5">Notes / Conditions particulières</label>
+                    <label className="block text-[10px] font-bold uppercase tracking-wider text-gray-400 mb-1.5">Notes</label>
                     <textarea value={form.notes} onChange={e => setForm({ ...form, notes: e.target.value })} rows={2}
-                      className="w-full px-3 py-2.5 border border-gray-200 rounded-xl text-sm text-gray-900 focus:outline-none focus:border-[#408398] resize-none"
+                      className="w-full px-3.5 py-2.5 border border-gray-200 rounded-xl text-sm text-gray-900 focus:outline-none focus:border-[#408398] resize-none"
                       placeholder="Inclus dans le prix, conditions spéciales..." />
                   </div>
 
-                  <div className="flex gap-3">
-                    <button type="button" onClick={() => setShowForm(false)} className="flex-1 py-3 border border-gray-200 rounded-xl text-sm font-medium text-gray-600 hover:bg-gray-50 transition-colors">
+                  <div className="flex gap-2.5 pt-1">
+                    <button type="button" onClick={() => setShowForm(false)}
+                      className="flex-1 py-2.5 border border-gray-200 rounded-xl text-sm font-medium text-gray-600 hover:bg-gray-50 transition-colors">
                       Annuler
                     </button>
-                    <button type="submit" className={`flex-1 py-3 text-white rounded-xl text-sm font-semibold transition-colors ${formType === "devis" ? "bg-amber-500 hover:bg-amber-600" : "bg-[#408398] hover:bg-[#326e80]"}`}>
-                      Créer le {formType === "devis" ? "devis" : "la facture"}
+                    <button type="submit"
+                      className={`flex-1 py-2.5 text-white rounded-xl text-sm font-semibold transition-colors ${formType === "devis" ? "bg-amber-500 hover:bg-amber-600" : "bg-[#0e2d38] hover:bg-[#1a3f50]"}`}>
+                      Créer {formType === "devis" ? "le devis" : "la facture"}
                     </button>
                   </div>
                 </form>
-              </div>
-            </motion.div>
-          </>
-        )}
-      </AnimatePresence>
-
-      {/* View Detail Panel */}
-      <AnimatePresence>
-        {viewFacture && (
-          <>
-            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 bg-black/50 z-50" onClick={() => setViewFacture(null)} />
-            <motion.div initial={{ opacity: 0, x: 50 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: 50 }} className="fixed right-0 top-0 bottom-0 z-50 w-full sm:w-[480px] bg-white shadow-2xl overflow-y-auto">
-              <div className="sticky top-0 bg-white border-b border-gray-100 px-6 py-4 flex items-center justify-between z-10">
-                <div className="flex items-center gap-2">
-                  <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${viewFacture.type === "devis" ? "bg-amber-100 text-amber-700" : "bg-[#408398]/10 text-[#408398]"}`}>
-                    {viewFacture.type === "devis" ? "DEVIS" : "FACTURE"}
-                  </span>
-                  <h3 className="font-bold text-gray-900">{viewFacture.numero}</h3>
-                </div>
-                <div className="flex items-center gap-2">
-                  <button onClick={() => { setPreviewDoc(viewFacture); setViewFacture(null); }}
-                    className="flex items-center gap-1.5 px-3 py-1.5 bg-[#408398]/10 text-[#408398] rounded-lg text-xs font-semibold hover:bg-[#408398]/20 transition-colors">
-                    <Eye size={13} /> Aperçu
-                  </button>
-                  <button onClick={() => setViewFacture(null)} className="text-gray-400 hover:text-gray-600"><X size={18} /></button>
-                </div>
-              </div>
-
-              <div className="p-6 space-y-6">
-                {/* Statut */}
-                <div>
-                  <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-2">Statut</p>
-                  <div className="flex gap-2">
-                    {(Object.keys(statutConfig) as Array<keyof typeof statutConfig>).map(s => (
-                      <button key={s} onClick={() => changeStatut(viewFacture.id, s)}
-                        className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold border transition-all ${viewFacture.statut === s ? statutConfig[s].color + " border-transparent" : "border-gray-200 text-gray-400 hover:border-gray-300"}`}>
-                        {viewFacture.statut === s && <Check size={11} />}
-                        {statutConfig[s].label}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-
-                {/* Info */}
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <p className="text-xs text-gray-400 mb-0.5">Client</p>
-                    <p className="text-sm font-semibold text-gray-900">{viewFacture.client_nom}</p>
-                    {viewFacture.client_email && <p className="text-xs text-gray-400">{viewFacture.client_email}</p>}
-                  </div>
-                  <div>
-                    <p className="text-xs text-gray-400 mb-0.5">Date</p>
-                    <p className="text-sm font-semibold text-gray-900">{new Date(viewFacture.date).toLocaleDateString("fr-FR")}</p>
-                    {viewFacture.echeance && <p className="text-xs text-gray-400">{viewFacture.type === "devis" ? "Valide jusqu'au" : "Échéance"} : {new Date(viewFacture.echeance).toLocaleDateString("fr-FR")}</p>}
-                  </div>
-                </div>
-
-                {/* Lignes */}
-                <div>
-                  <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-3">Prestations</p>
-                  <div className="bg-gray-50 rounded-xl overflow-hidden">
-                    {viewFacture.lignes.map((l, i) => (
-                      <div key={i} className="flex items-center justify-between px-4 py-2.5 border-b border-gray-100 last:border-0 text-sm">
-                        <span className="text-gray-900 flex-1">{l.description}</span>
-                        <span className="text-gray-400 mx-3">×{l.quantite}</span>
-                        <span className="font-semibold text-gray-900">{fmt(l.quantite * l.prix_unitaire)}</span>
-                      </div>
-                    ))}
-                    <div className="flex justify-between items-center px-4 py-3 bg-[#408398]/5">
-                      <span className="text-sm font-semibold text-gray-700">Total</span>
-                      <span className="text-lg font-bold text-[#408398]">{fmt(viewFacture.total)}</span>
-                    </div>
-                  </div>
-                </div>
-
-                {viewFacture.notes && (
-                  <div>
-                    <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-1.5">Notes</p>
-                    <p className="text-sm text-gray-600 bg-gray-50 rounded-xl p-3">{viewFacture.notes}</p>
-                  </div>
-                )}
-
-                <button onClick={() => deleteFacture(viewFacture.id)}
-                  className="w-full py-2.5 border border-red-200 text-red-500 rounded-xl text-sm font-medium hover:bg-red-50 transition-colors flex items-center justify-center gap-2">
-                  <Trash2 size={14} />
-                  Supprimer
-                </button>
               </div>
             </motion.div>
           </>
