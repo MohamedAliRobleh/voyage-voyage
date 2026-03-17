@@ -8,8 +8,12 @@ import {
   Map, Briefcase, Package, MessageCircle, Clock, CheckCircle,
 } from "lucide-react";
 import { destinations } from "@/lib/destinations";
+import ClientsSection from "./ClientsSection";
+import FacturesSection from "./FacturesSection";
 
 const ADMIN_PASSWORD = "vv2024admin";
+
+type Tab = "dashboard" | "clients" | "factures";
 
 export default function AdminPage() {
   const [authenticated, setAuthenticated] = useState(false);
@@ -17,6 +21,7 @@ export default function AdminPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [activeTab, setActiveTab] = useState<Tab>("dashboard");
 
   useEffect(() => {
     const auth = sessionStorage.getItem("vv-admin");
@@ -135,6 +140,12 @@ export default function AdminPage() {
     { icon: Clock, label: "Horaires", value: "Lun–Sam : 8h–18h" },
   ];
 
+  const tabs: { id: Tab; label: string; icon: React.ReactNode }[] = [
+    { id: "dashboard", label: "Dashboard", icon: <LayoutDashboard size={15} /> },
+    { id: "clients", label: "Clients", icon: <Users size={15} /> },
+    { id: "factures", label: "Factures", icon: <FileText size={15} /> },
+  ];
+
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Header */}
@@ -156,97 +167,128 @@ export default function AdminPage() {
         </button>
       </div>
 
-      <div className="max-w-5xl mx-auto px-4 py-8 space-y-8">
-
-        {/* Stats */}
-        <div>
-          <h2 className="text-sm font-semibold text-gray-400 uppercase tracking-widest mb-4">Vue d&apos;ensemble</h2>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            {stats.map((stat, i) => (
-              <motion.div
-                key={i}
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: i * 0.08 }}
-                className="bg-white rounded-2xl p-5 shadow-sm border border-gray-100"
-              >
-                <div className={`w-10 h-10 rounded-xl flex items-center justify-center mb-3 ${stat.color}`}>
-                  <stat.icon size={18} />
-                </div>
-                <p className="text-2xl font-bold text-gray-900">{stat.value}</p>
-                <p className="text-xs text-gray-400 mt-0.5">{stat.label}</p>
-              </motion.div>
-            ))}
-          </div>
+      {/* Tab Navigation */}
+      <div className="bg-white border-b border-gray-100 px-6">
+        <div className="max-w-5xl mx-auto flex gap-1">
+          {tabs.map(tab => (
+            <button
+              key={tab.id}
+              onClick={() => setActiveTab(tab.id)}
+              className={`flex items-center gap-2 px-4 py-3.5 text-sm font-semibold border-b-2 transition-colors ${
+                activeTab === tab.id
+                  ? "border-[#408398] text-[#408398]"
+                  : "border-transparent text-gray-400 hover:text-gray-600"
+              }`}
+            >
+              {tab.icon}
+              {tab.label}
+            </button>
+          ))}
         </div>
+      </div>
 
-        {/* Analytics notice */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.3 }}
-          className="bg-[#408398]/10 border border-[#408398]/20 rounded-2xl p-5 flex gap-4"
-        >
-          <div className="w-10 h-10 bg-[#408398]/20 rounded-xl flex items-center justify-center shrink-0">
-            <TrendingUp size={18} className="text-[#408398]" />
-          </div>
-          <div>
-            <p className="font-semibold text-gray-900 text-sm">Statistiques de visites</p>
-            <p className="text-gray-500 text-sm mt-1">
-              Statistiques en temps réel disponibles sur{" "}
-              <a href="https://cloud.umami.is" target="_blank" rel="noopener noreferrer" className="text-[#408398] underline font-medium">cloud.umami.is</a>
-              {" "}— visites, pages populaires, pays des visiteurs, appareils.
-            </p>
-          </div>
-        </motion.div>
+      <div className="max-w-5xl mx-auto px-4 py-8">
 
-        {/* Pages */}
-        <div>
-          <h2 className="text-sm font-semibold text-gray-400 uppercase tracking-widest mb-4">Pages du site</h2>
-          <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
-            {pages.map((page, i) => (
-              <a
-                key={i}
-                href={page.href}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="flex items-center justify-between px-5 py-4 hover:bg-gray-50 transition-colors border-b border-gray-50 last:border-0"
-              >
-                <div className="flex items-center gap-3">
-                  <div className="w-8 h-8 bg-[#408398]/10 rounded-lg flex items-center justify-center">
-                    <page.icon size={15} className="text-[#408398]" />
-                  </div>
-                  <span className="text-sm font-medium text-gray-700">{page.label}</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <span className="flex items-center gap-1 text-xs text-green-600 bg-green-50 px-2 py-0.5 rounded-full">
-                    <CheckCircle size={11} />
-                    En ligne
-                  </span>
-                  <Eye size={15} className="text-gray-300" />
-                </div>
-              </a>
-            ))}
-          </div>
-        </div>
-
-        {/* Contact info */}
-        <div>
-          <h2 className="text-sm font-semibold text-gray-400 uppercase tracking-widest mb-4">Informations de contact affichées</h2>
-          <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
-            {contactInfo.map((item, i) => (
-              <div key={i} className="flex items-start gap-4 px-5 py-4 border-b border-gray-50 last:border-0">
-                <div className="w-8 h-8 bg-[#408398]/10 rounded-lg flex items-center justify-center shrink-0 mt-0.5">
-                  <item.icon size={15} className="text-[#408398]" />
-                </div>
-                <div>
-                  <p className="text-xs text-gray-400 mb-0.5">{item.label}</p>
-                  <p className="text-sm font-medium text-gray-800">{item.value}</p>
-                </div>
+        {/* Dashboard Tab */}
+        {activeTab === "dashboard" && (
+          <div className="space-y-8">
+            {/* Stats */}
+            <div>
+              <h2 className="text-sm font-semibold text-gray-400 uppercase tracking-widest mb-4">Vue d&apos;ensemble</h2>
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                {stats.map((stat, i) => (
+                  <motion.div
+                    key={i}
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: i * 0.08 }}
+                    className="bg-white rounded-2xl p-5 shadow-sm border border-gray-100"
+                  >
+                    <div className={`w-10 h-10 rounded-xl flex items-center justify-center mb-3 ${stat.color}`}>
+                      <stat.icon size={18} />
+                    </div>
+                    <p className="text-2xl font-bold text-gray-900">{stat.value}</p>
+                    <p className="text-xs text-gray-400 mt-0.5">{stat.label}</p>
+                  </motion.div>
+                ))}
               </div>
-            ))}
+            </div>
+
+            {/* Analytics notice */}
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.3 }}
+              className="bg-[#408398]/10 border border-[#408398]/20 rounded-2xl p-5 flex gap-4"
+            >
+              <div className="w-10 h-10 bg-[#408398]/20 rounded-xl flex items-center justify-center shrink-0">
+                <TrendingUp size={18} className="text-[#408398]" />
+              </div>
+              <div>
+                <p className="font-semibold text-gray-900 text-sm">Statistiques de visites</p>
+                <p className="text-gray-500 text-sm mt-1">
+                  Statistiques en temps réel disponibles sur{" "}
+                  <a href="https://cloud.umami.is" target="_blank" rel="noopener noreferrer" className="text-[#408398] underline font-medium">cloud.umami.is</a>
+                  {" "}— visites, pages populaires, pays des visiteurs, appareils.
+                </p>
+              </div>
+            </motion.div>
+
+            {/* Pages */}
+            <div>
+              <h2 className="text-sm font-semibold text-gray-400 uppercase tracking-widest mb-4">Pages du site</h2>
+              <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+                {pages.map((page, i) => (
+                  <a
+                    key={i}
+                    href={page.href}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex items-center justify-between px-5 py-4 hover:bg-gray-50 transition-colors border-b border-gray-50 last:border-0"
+                  >
+                    <div className="flex items-center gap-3">
+                      <div className="w-8 h-8 bg-[#408398]/10 rounded-lg flex items-center justify-center">
+                        <page.icon size={15} className="text-[#408398]" />
+                      </div>
+                      <span className="text-sm font-medium text-gray-700">{page.label}</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <span className="flex items-center gap-1 text-xs text-green-600 bg-green-50 px-2 py-0.5 rounded-full">
+                        <CheckCircle size={11} />
+                        En ligne
+                      </span>
+                      <Eye size={15} className="text-gray-300" />
+                    </div>
+                  </a>
+                ))}
+              </div>
+            </div>
+
+            {/* Contact info */}
+            <div>
+              <h2 className="text-sm font-semibold text-gray-400 uppercase tracking-widest mb-4">Informations de contact affichées</h2>
+              <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+                {contactInfo.map((item, i) => (
+                  <div key={i} className="flex items-start gap-4 px-5 py-4 border-b border-gray-50 last:border-0">
+                    <div className="w-8 h-8 bg-[#408398]/10 rounded-lg flex items-center justify-center shrink-0 mt-0.5">
+                      <item.icon size={15} className="text-[#408398]" />
+                    </div>
+                    <div>
+                      <p className="text-xs text-gray-400 mb-0.5">{item.label}</p>
+                      <p className="text-sm font-medium text-gray-800">{item.value}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
           </div>
-        </div>
+        )}
+
+        {/* Clients Tab */}
+        {activeTab === "clients" && <ClientsSection />}
+
+        {/* Factures Tab */}
+        {activeTab === "factures" && <FacturesSection />}
 
       </div>
     </div>

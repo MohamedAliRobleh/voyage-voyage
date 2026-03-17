@@ -20,9 +20,21 @@ export default function ContactPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
-    await new Promise((r) => setTimeout(r, 1000));
-    toast.success(t("contact.form.success"));
-    setForm({ name: "", email: "", phone: "", subject: "", message: "" });
+    try {
+      const res = await fetch("/api/contact", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(form),
+      });
+      if (res.ok) {
+        toast.success(t("contact.form.success"));
+        setForm({ name: "", email: "", phone: "", subject: "", message: "" });
+      } else {
+        toast.error("Une erreur est survenue. Veuillez réessayer.");
+      }
+    } catch {
+      toast.error("Une erreur est survenue. Veuillez réessayer.");
+    }
     setLoading(false);
   };
 
