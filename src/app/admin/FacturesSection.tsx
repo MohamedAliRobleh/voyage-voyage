@@ -113,7 +113,7 @@ export default function FacturesSection() {
   const filtered = factures.filter(f => filterType === "all" || f.type === filterType);
 
   // Stats
-  const totalFactures = factures.filter(f => f.type === "factures").length;
+  const totalFactures = factures.filter(f => f.type === "facture").length;
   const totalDevis = factures.filter(f => f.type === "devis").length;
   const totalPaye = factures.filter(f => f.statut === "payé").reduce((s, f) => s + f.total, 0);
   const totalEnAttente = factures.filter(f => f.statut !== "payé").reduce((s, f) => s + f.total, 0);
