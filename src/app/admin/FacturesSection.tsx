@@ -47,7 +47,11 @@ export default function FacturesSection() {
     lignes: [{ ...emptyLigne }] as LigneFacture[],
   });
 
-  useEffect(() => { loadData(); }, []);
+  useEffect(() => {
+    loadData();
+    const interval = setInterval(loadData, 10000); // refresh toutes les 10s
+    return () => clearInterval(interval);
+  }, []);
 
   const loadData = async () => {
     setLoading(true);
