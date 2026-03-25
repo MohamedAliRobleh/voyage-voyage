@@ -54,6 +54,15 @@ export default function ImageCarousel() {
         />
       </AnimatePresence>
 
+      {/* Logo overlay */}
+      <div className="absolute inset-0 flex items-center justify-center z-10 pointer-events-none">
+        <img
+          src="/images/pics/logo/logoblanc.webp"
+          alt="Voyage Voyage"
+          className="w-28 h-28 object-contain opacity-80 drop-shadow-2xl"
+        />
+      </div>
+
       {/* Caption */}
       <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/70 to-transparent p-4">
         <p className="text-white font-bold uppercase tracking-widest text-sm">

@@ -7,6 +7,7 @@ import { ChevronDown, MapPin } from "lucide-react";
 import { destinations } from "@/lib/destinations";
 import ImageCarousel from "@/components/ImageCarousel";
 import FAQAccordion from "@/components/FAQAccordion";
+import ReviewsSection from "@/components/ReviewsSection";
 import { useLanguage } from "@/contexts/LanguageContext";
 
 // Leaflet ne fonctionne pas en SSR
@@ -302,7 +303,12 @@ export default function HomePage() {
       </section>
 
       {/* ══════════════════════════════════════════════════
-          SECTION 6 — FAQ
+          SECTION 6 — AVIS VOYAGEURS
+      ══════════════════════════════════════════════════ */}
+      <ReviewsSection />
+
+      {/* ══════════════════════════════════════════════════
+          SECTION 7 — FAQ
       ══════════════════════════════════════════════════ */}
       <section className="py-24 bg-gray-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">

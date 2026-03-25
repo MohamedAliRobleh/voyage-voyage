@@ -190,7 +190,7 @@ export const fr = {
       },
       {
         q: "Quelles langues sont parlées à Djibouti ?",
-        a: "Les langues officielles sont le français et l'arabe. Les populations locales parlent principalement l'afar et le somali. Dans les zones touristiques, l'anglais est de plus en plus compris. Voyage Voyage propose des guides multilingues (français, anglais, arabe).",
+        a: "Les langues officielles sont le français et l'arabe. Les populations locales parlent principalement l'afar et le somali. Dans les zones touristiques, le français est de plus en plus compris. Voyage Voyage propose des guides multilingues (français, anglais, arabe).",
       },
       {
         q: "Où peut-on consommer de l'alcool à Djibouti ?",

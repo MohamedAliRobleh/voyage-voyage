@@ -5,6 +5,15 @@ export const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
 );
 
+export type Review = {
+  id: string;
+  name: string;
+  rating: number;
+  comment: string;
+  destination: string | null;
+  created_at: string;
+};
+
 export type Client = {
   id: string;
   nom: string;

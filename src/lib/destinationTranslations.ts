@@ -12,16 +12,20 @@ const difficultyMap: Record<string, Record<Locale, string>> = {
 const durationMap: Record<string, Record<Locale, string>> = {
   "1 journée":    { fr: "1 journée",    en: "1 day",      ar: "يوم واحد" },
   "2 jours":      { fr: "2 jours",      en: "2 days",     ar: "يومان" },
+  "2 jours min.": { fr: "2 jours min.", en: "2+ days",    ar: "يومان أو أكثر" },
   "Demi-journée": { fr: "Demi-journée", en: "Half day",   ar: "نصف يوم" },
   "1-2 jours":    { fr: "1-2 jours",   en: "1-2 days",   ar: "1-2 يوم" },
 };
 
 const bestTimeMap: Record<string, Record<Locale, string>> = {
-  "Oct - Avril":    { fr: "Oct - Avril",    en: "Oct - April",    ar: "أكتوبر - أبريل" },
-  "Nov - Mars":     { fr: "Nov - Mars",     en: "Nov - March",    ar: "نوفمبر - مارس" },
-  "Nov - Janvier":  { fr: "Nov - Janvier",  en: "Nov - January",  ar: "نوفمبر - يناير" },
-  "Toute l'année":  { fr: "Toute l'année",  en: "All year",       ar: "طوال العام" },
-  "Nov - Février":  { fr: "Nov - Février",  en: "Nov - February", ar: "نوفمبر - فبراير" },
+  "Oct - Avril":  { fr: "Oct - Avril",  en: "Oct - April",    ar: "أكتوبر - أبريل" },
+  "Oct - Mai":    { fr: "Oct - Mai",    en: "Oct - May",      ar: "أكتوبر - مايو" },
+  "Oct - Juin":   { fr: "Oct - Juin",   en: "Oct - June",     ar: "أكتوبر - يونيو" },
+  "Oct - Fév":    { fr: "Oct - Fév",    en: "Oct - Feb",      ar: "أكتوبر - فبراير" },
+  "Nov - Mars":   { fr: "Nov - Mars",   en: "Nov - March",    ar: "نوفمبر - مارس" },
+  "Nov - Janvier":{ fr: "Nov - Janvier",en: "Nov - January",  ar: "نوفمبر - يناير" },
+  "Toute l'année":{ fr: "Toute l'année",en: "All year",       ar: "طوال العام" },
+  "Nov - Février":{ fr: "Nov - Février",en: "Nov - February", ar: "نوفمبر - فبراير" },
 };
 
 // ── Per-destination content translations ──────────────────────────────────

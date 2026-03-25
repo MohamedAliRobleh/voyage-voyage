@@ -5,19 +5,19 @@ import Link from "next/link";
 import { useLanguage } from "@/contexts/LanguageContext";
 
 const destinationMarkers = [
-  { name: "Lac Assal", slug: "lac-assal", lat: 11.65, lng: 42.42, color: "#408398", emoji: "🧂" },
-  { name: "Lac Abbé", slug: "lac-abbe", lat: 11.17, lng: 41.83, color: "#e8645a", emoji: "🌋" },
-  { name: "Sables Blancs", slug: "sables-blancs", lat: 11.55, lng: 43.08, color: "#25D366", emoji: "🏖️" },
-  { name: "Requin-Baleine", slug: "requin-baleine", lat: 11.85, lng: 43.10, color: "#7c3aed", emoji: "🦈" },
-  { name: "Loubatanleh", slug: "loubatanleh", lat: 11.75, lng: 42.80, color: "#f59e0b", emoji: "🌿" },
-  { name: "Goubet", slug: "goubet", lat: 11.52, lng: 42.88, color: "#1d4ed8", emoji: "🌊" },
-  { name: "Bankoualeh", slug: "bankoualeh", lat: 11.20, lng: 42.00, color: "#dc2626", emoji: "🏕️" },
-  { name: "Ditilou", slug: "ditilou", lat: 11.45, lng: 42.35, color: "#059669", emoji: "🦅" },
-  { name: "Dépression des Allos", slug: "depression-allos", lat: 11.25, lng: 42.05, color: "#d97706", emoji: "⛏️" },
-  { name: "Obock & Mangroves", slug: "obock-godoria", lat: 11.97, lng: 43.28, color: "#0891b2", emoji: "🌴" },
-  { name: "Forêt du Day", slug: "foret-day", lat: 11.75, lng: 42.62, color: "#16a34a", emoji: "🌲" },
-  { name: "Abourma", slug: "abourma", lat: 12.00, lng: 42.17, color: "#9333ea", emoji: "🪨" },
-  { name: "Îles Moucha & Maskali", slug: "iles-moucha-maskali", lat: 11.62, lng: 43.15, color: "#0284c7", emoji: "🏝️" },
+  { name: "Lac Assal", slug: "lac-assal", lat: 11.657, lng: 42.416, color: "#408398", emoji: "🧂" },
+  { name: "Lac Abbé", slug: "lac-abbe", lat: 11.117, lng: 41.783, color: "#e8645a", emoji: "🌋" },
+  { name: "Sables Blancs", slug: "sables-blancs", lat: 11.790, lng: 42.870, color: "#25D366", emoji: "🏖️" },
+  { name: "Requin-Baleine", slug: "requin-baleine", lat: 11.517, lng: 42.944, color: "#7c3aed", emoji: "🦈" },
+  { name: "Loubatanleh", slug: "loubatanleh", lat: 11.513, lng: 42.908, color: "#f59e0b", emoji: "🌿" },
+  { name: "Goubet", slug: "goubet", lat: 11.517, lng: 42.783, color: "#1d4ed8", emoji: "🌊" },
+  { name: "Bankoualeh", slug: "bankoualeh", lat: 11.783, lng: 42.750, color: "#dc2626", emoji: "🏕️" },
+  { name: "Ditilou", slug: "ditilou", lat: 11.700, lng: 42.617, color: "#059669", emoji: "🦅" },
+  { name: "Dépression des Allos", slug: "depression-allos", lat: 11.133, lng: 42.717, color: "#d97706", emoji: "⛏️" },
+  { name: "Obock & Mangroves", slug: "obock-godoria", lat: 11.967, lng: 43.300, color: "#0891b2", emoji: "🌴" },
+  { name: "Forêt du Day", slug: "foret-day", lat: 11.800, lng: 42.700, color: "#16a34a", emoji: "🌲" },
+  { name: "Abourma", slug: "abourma", lat: 12.350, lng: 42.150, color: "#9333ea", emoji: "🪨" },
+  { name: "Îles Moucha & Maskali", slug: "iles-moucha-maskali", lat: 11.617, lng: 43.200, color: "#0284c7", emoji: "🏝️" },
 ];
 
 export default function InteractiveMap() {
