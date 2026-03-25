@@ -226,34 +226,61 @@ export default function ReviewsSection() {
             initial={{ opacity: 0, x: 20 }}
             whileInView={{ opacity: 1, x: 0 }}
             viewport={{ once: true }}
-            className="space-y-4 max-h-[600px] overflow-y-auto pr-2"
+            className="flex flex-col"
           >
-            {loading ? (
-              <div className="flex items-center justify-center h-40 text-gray-400">Chargement...</div>
-            ) : reviews.length === 0 ? (
-              <div className="flex flex-col items-center justify-center h-40 text-gray-400 text-center">
-                <span className="text-4xl mb-3">💬</span>
-                <p className="text-sm">Soyez le premier à laisser un avis !</p>
-              </div>
-            ) : (
-              reviews.map((r) => (
-                <div key={r.id} className="bg-gray-50 rounded-2xl p-5 border border-gray-100">
-                  <div className="flex items-start justify-between mb-2">
-                    <div>
-                      <p className="font-bold text-gray-900 text-sm">{r.name}</p>
-                      {r.destination && (
-                        <p className="text-xs text-[#408398] font-medium mt-0.5">{r.destination}</p>
-                      )}
-                    </div>
-                    <StarRating value={r.rating} />
-                  </div>
-                  <p className="text-gray-600 text-sm leading-relaxed">{r.comment}</p>
-                  <p className="text-gray-300 text-xs mt-3">
-                    {new Date(r.created_at).toLocaleDateString("fr-FR", { year: "numeric", month: "long", day: "numeric" })}
-                  </p>
+            {/* Cadre scrollable */}
+            <div className="border border-gray-200 rounded-3xl bg-gray-50 shadow-inner overflow-hidden">
+              {loading ? (
+                <div className="flex items-center justify-center h-40 text-gray-400">Chargement...</div>
+              ) : reviews.length === 0 ? (
+                <div className="flex flex-col items-center justify-center h-40 text-gray-400 text-center p-8">
+                  <span className="text-4xl mb-3">💬</span>
+                  <p className="text-sm">Soyez le premier à laisser un avis !</p>
                 </div>
-              ))
-            )}
+              ) : (
+                <>
+                  {/* Header du cadre */}
+                  <div className="px-5 py-3 border-b border-gray-200 bg-white flex items-center justify-between">
+                    <span className="text-xs font-bold uppercase tracking-widest text-gray-400">
+                      {reviews.length} avis
+                    </span>
+                    <span className="text-xs text-gray-400">↕ Défiler pour voir plus</span>
+                  </div>
+
+                  {/* Zone scrollable */}
+                  <div className="overflow-y-auto max-h-[520px] divide-y divide-gray-200">
+                    {reviews.map((r) => (
+                      <div key={r.id} className="bg-white hover:bg-gray-50 transition-colors p-5">
+                        <div className="flex items-start justify-between mb-3">
+                          <div className="flex items-center gap-3">
+                            {/* Avatar initiale */}
+                            <div
+                              className="w-10 h-10 rounded-full flex items-center justify-center text-white font-black text-sm flex-shrink-0"
+                              style={{ background: "linear-gradient(135deg, #408398, #5bb8d4)" }}
+                            >
+                              {r.name.charAt(0).toUpperCase()}
+                            </div>
+                            <div>
+                              <p className="font-bold text-gray-900 text-sm">{r.name}</p>
+                              {r.destination && (
+                                <p className="text-xs text-[#408398] font-medium">📍 {r.destination}</p>
+                              )}
+                            </div>
+                          </div>
+                          <div className="flex flex-col items-end gap-1">
+                            <StarRating value={r.rating} />
+                            <p className="text-gray-300 text-xs">
+                              {new Date(r.created_at).toLocaleDateString("fr-FR", { year: "numeric", month: "short", day: "numeric" })}
+                            </p>
+                          </div>
+                        </div>
+                        <p className="text-gray-600 text-sm leading-relaxed pl-13 ml-[52px]">{r.comment}</p>
+                      </div>
+                    ))}
+                  </div>
+                </>
+              )}
+            </div>
           </motion.div>
 
         </div>
