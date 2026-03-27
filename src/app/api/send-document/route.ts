@@ -1,9 +1,19 @@
 import { NextRequest, NextResponse } from "next/server";
-import { Resend } from "resend";
+import nodemailer from "nodemailer";
 import { createClient } from "@supabase/supabase-js";
 import type { Facture } from "@/lib/supabase";
 
-const resend = new Resend(process.env.RESEND_API_KEY);
+const smtpPort = Number(process.env.OVH_SMTP_PORT) || 465;
+const transporter = nodemailer.createTransport({
+  host: process.env.OVH_SMTP_HOST || "ssl0.ovh.net",
+  port: smtpPort,
+  secure: smtpPort === 465,
+  auth: {
+    user: process.env.OVH_SMTP_USER,
+    pass: process.env.OVH_SMTP_PASS,
+  },
+});
+
 const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL || "https://voyagevoyagedj.com";
 
 const supabaseAdmin = createClient(
@@ -192,17 +202,18 @@ export async function POST(req: NextRequest) {
     ? `Devis ${document.numero} — Voyage Voyage`
     : `Facture ${document.numero} — Voyage Voyage`;
 
-  const { error } = await resend.emails.send({
-    from: "Voyage Voyage <onboarding@resend.dev>",
-    to: document.client_email,
-    reply_to: "voyagevoyagedjib@gmail.com",
-    subject,
-    html: generateHTML(document),
-    text: generateText(document),
-  });
-
-  if (error) {
-    return NextResponse.json({ error: error.message }, { status: 500 });
+  try {
+    await transporter.sendMail({
+      from: `"Voyage Voyage" <${process.env.OVH_SMTP_USER}>`,
+      to: document.client_email,
+      replyTo: process.env.OVH_SMTP_USER,
+      subject,
+      html: generateHTML(document),
+      text: generateText(document),
+    });
+  } catch (err) {
+    const message = err instanceof Error ? err.message : "Erreur inconnue";
+    return NextResponse.json({ error: message }, { status: 500 });
   }
 
   // Auto-update status to "envoyé" when email is sent

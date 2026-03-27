@@ -52,8 +52,7 @@ export default function DocumentPreview({ document: doc, onClose }: Props) {
   const handleWhatsApp = async () => {
     setGeneratingPdf(true);
     try {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const html2pdf = (await import("html2pdf.js" as any)).default;
+      const html2pdf = (await import("html2pdf.js")).default;
       const content = printRef.current;
       if (!content) return;
 
