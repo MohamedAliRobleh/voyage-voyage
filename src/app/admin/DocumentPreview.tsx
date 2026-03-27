@@ -121,7 +121,7 @@ export default function DocumentPreview({ document: doc, onClose }: Props) {
         <meta charset="UTF-8" />
         <title>${doc.numero}</title>
         <style>
-          * { margin: 0; padding: 0; box-sizing: border-box; }
+          * { margin: 0; padding: 0; box-sizing: border-box; -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; color-adjust: exact !important; }
           body { font-family: Arial, Helvetica, sans-serif; font-size: 13px; color: #1a1a1a; background: white; }
           .page { width: 210mm; min-height: 297mm; padding: 18mm 16mm; margin: 0 auto; }
           .header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 32px; }
@@ -163,6 +163,7 @@ export default function DocumentPreview({ document: doc, onClose }: Props) {
           .logo-area { display: flex; align-items: center; gap: 12px; }
           .logo-area img { width: 52px; height: 52px; border-radius: 50%; object-fit: contain; }
           @media print {
+            * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; color-adjust: exact !important; }
             body { margin: 0; }
             .page { padding: 12mm 14mm; }
           }
