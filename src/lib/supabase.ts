@@ -84,6 +84,7 @@ export type Facture = {
   client_email: string;
   date: string;
   date_depart: string | null;
+  date_retour: string | null;
   echeance: string | null;
   statut: "brouillon" | "envoyé" | "accepté" | "en_negociation" | "confirmé" | "payé";
   lignes: LigneFacture[];

@@ -78,6 +78,7 @@ export default function FacturesSection() {
     client_email: "",
     date: localDateStr(),
     date_depart: "",
+    date_retour: "",
     echeance: "",
     notes: "",
     lignes: [{ ...emptyLigne }] as LigneFacture[],
@@ -100,7 +101,7 @@ export default function FacturesSection() {
 
   const openForm = (type: "facture" | "devis") => {
     setFormType(type);
-    setForm({ client_id: "", client_nom: "", client_email: "", date: localDateStr(), date_depart: "", echeance: "", notes: "", lignes: [{ ...emptyLigne }] });
+    setForm({ client_id: "", client_nom: "", client_email: "", date: localDateStr(), date_depart: "", date_retour: "", echeance: "", notes: "", lignes: [{ ...emptyLigne }] });
     setShowForm(true);
   };
 
@@ -129,6 +130,7 @@ export default function FacturesSection() {
       date: form.date, echeance: form.echeance || null,
       statut: "brouillon", lignes: lignesValides, total, notes: form.notes,
       date_depart: form.date_depart || null,
+      date_retour: form.date_retour || null,
       token,
     });
     if (error) { toast.error("Erreur lors de la création"); return; }
@@ -600,13 +602,22 @@ export default function FacturesSection() {
                     </div>
                   </div>
 
-                  {/* Date de départ */}
-                  <div>
-                    <label className="block text-[10px] font-bold uppercase tracking-wider text-gray-400 mb-1.5">
-                      📅 Date de départ du voyage
-                    </label>
-                    <input type="date" value={form.date_depart} onChange={e => setForm({ ...form, date_depart: e.target.value })}
-                      className="w-full px-3.5 py-2.5 border border-[#408398]/40 rounded-xl text-sm text-gray-900 focus:outline-none focus:border-[#408398] bg-[#408398]/5" />
+                  {/* Dates départ / retour */}
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <label className="block text-[10px] font-bold uppercase tracking-wider text-gray-400 mb-1.5">
+                        📅 Date de départ
+                      </label>
+                      <input type="date" value={form.date_depart} onChange={e => setForm({ ...form, date_depart: e.target.value })}
+                        className="w-full px-3.5 py-2.5 border border-[#408398]/40 rounded-xl text-sm text-gray-900 focus:outline-none focus:border-[#408398] bg-[#408398]/5" />
+                    </div>
+                    <div>
+                      <label className="block text-[10px] font-bold uppercase tracking-wider text-gray-400 mb-1.5">
+                        🔙 Date de retour
+                      </label>
+                      <input type="date" value={form.date_retour} onChange={e => setForm({ ...form, date_retour: e.target.value })}
+                        className="w-full px-3.5 py-2.5 border border-[#408398]/40 rounded-xl text-sm text-gray-900 focus:outline-none focus:border-[#408398] bg-[#408398]/5" />
+                    </div>
                   </div>
 
                   {/* Lignes */}

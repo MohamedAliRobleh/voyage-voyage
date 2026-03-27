@@ -70,7 +70,13 @@ function generateHTML(doc: Facture): string {
           </td>
           <td style="vertical-align:top;text-align:right;">
             <p style="font-size:10px;font-weight:700;text-transform:uppercase;color:#888;letter-spacing:1px;margin:0 0 2px;">Date d'émission</p>
-            <p style="font-size:13px;font-weight:600;color:#1a1a1a;margin:0 0 12px;">${formatDate(doc.date)}</p>
+            <p style="font-size:13px;font-weight:600;color:#1a1a1a;margin:0 0 8px;">${formatDate(doc.date)}</p>
+            ${doc.date_depart ? `
+            <p style="font-size:10px;font-weight:700;text-transform:uppercase;color:#888;letter-spacing:1px;margin:0 0 2px;">Date de départ</p>
+            <p style="font-size:13px;font-weight:600;color:${accentColor};margin:0 0 8px;">${formatDate(doc.date_depart)}</p>` : ""}
+            ${doc.date_retour ? `
+            <p style="font-size:10px;font-weight:700;text-transform:uppercase;color:#888;letter-spacing:1px;margin:0 0 2px;">Date de retour</p>
+            <p style="font-size:13px;font-weight:600;color:${accentColor};margin:0 0 8px;">${formatDate(doc.date_retour)}</p>` : ""}
             ${doc.echeance ? `
             <p style="font-size:10px;font-weight:700;text-transform:uppercase;color:#888;letter-spacing:1px;margin:0 0 2px;">${isDevis ? "Validité jusqu'au" : "Échéance"}</p>
             <p style="font-size:13px;font-weight:600;color:${accentColor};margin:0;">${formatDate(doc.echeance)}</p>` : ""}
@@ -102,19 +108,11 @@ function generateHTML(doc: Facture): string {
         </tbody>
       </table>
 
-      <!-- Totals -->
+      <!-- Total -->
       <div style="display:flex;justify-content:flex-end;margin-bottom:32px;">
         <div style="width:260px;">
-          <div style="display:flex;justify-content:space-between;padding:6px 0;font-size:12px;border-bottom:1px solid #eee;">
-            <span style="color:#555;">Sous-total HT</span>
-            <span style="font-weight:600;">${formatMoney(total_ht)}</span>
-          </div>
-          <div style="display:flex;justify-content:space-between;padding:6px 0;font-size:12px;border-bottom:1px solid #eee;">
-            <span style="color:#555;">TVA (exonéré)</span>
-            <span style="font-weight:600;">0 DJF</span>
-          </div>
-          <div style="display:flex;justify-content:space-between;padding:12px 14px;font-size:15px;font-weight:800;background:#0e2d38;color:white;border-radius:8px;margin-top:8px;">
-            <span>TOTAL TTC</span>
+          <div style="display:flex;justify-content:space-between;padding:12px 14px;font-size:15px;font-weight:800;background:#0e2d38;color:white;border-radius:8px;">
+            <span>TOTAL</span>
             <span>${formatMoney(total_ht)}</span>
           </div>
         </div>
@@ -155,7 +153,8 @@ function generateHTML(doc: Facture): string {
     <div style="background:#f5f9fb;padding:20px 40px;text-align:center;border-top:1px solid #e8f0f3;">
       <p style="font-size:11px;color:#888;line-height:1.8;margin:0;">
         VOYAGE VOYAGE — Agence de Tourisme — Djibouti-Ville, République de Djibouti<br/>
-        Tél : +253 77 07 33 77 | voyagevoyagedjib@gmail.com | voyagevoyagedj.com
+        📞 +253 77 07 33 77 &nbsp;|&nbsp; 💬 WhatsApp : +253 77 07 33 77<br/>
+        voyagevoyagedjib@gmail.com | voyagevoyagedj.com
       </p>
     </div>
 

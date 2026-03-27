@@ -260,7 +260,8 @@ export default function DocumentPreview({ document: doc, onClose }: Props) {
                       Agence de Tourisme — Djibouti<br />
                       Gabode 5 - Zone Stid, Extension Lot 227<br />
                       Djibouti-Ville, République de Djibouti<br />
-                      Tél : +253 77 07 33 77 | voyagevoyagedjib@gmail.com
+                      📞 +253 77 07 33 77 &nbsp;|&nbsp; 💬 WhatsApp : +253 77 07 33 77<br />
+                      voyagevoyagedjib@gmail.com
                     </p>
                   </div>
                 </div>
@@ -291,6 +292,22 @@ export default function DocumentPreview({ document: doc, onClose }: Props) {
                     </p>
                     <p style={{ fontSize: "13px", fontWeight: 600 }}>{fmtDate(doc.date)}</p>
                   </div>
+                  {doc.date_depart && (
+                    <div style={{ marginBottom: "8px" }}>
+                      <p style={{ fontSize: "10px", fontWeight: 700, textTransform: "uppercase", color: "#888", letterSpacing: "1px" }}>
+                        Date de départ
+                      </p>
+                      <p style={{ fontSize: "13px", fontWeight: 600, color: isDevis ? "#d97706" : "#408398" }}>{fmtDate(doc.date_depart)}</p>
+                    </div>
+                  )}
+                  {doc.date_retour && (
+                    <div style={{ marginBottom: "8px" }}>
+                      <p style={{ fontSize: "10px", fontWeight: 700, textTransform: "uppercase", color: "#888", letterSpacing: "1px" }}>
+                        Date de retour
+                      </p>
+                      <p style={{ fontSize: "13px", fontWeight: 600, color: isDevis ? "#d97706" : "#408398" }}>{fmtDate(doc.date_retour)}</p>
+                    </div>
+                  )}
                   {doc.echeance && (
                     <div>
                       <p style={{ fontSize: "10px", fontWeight: 700, textTransform: "uppercase", color: "#888", letterSpacing: "1px" }}>
@@ -332,20 +349,12 @@ export default function DocumentPreview({ document: doc, onClose }: Props) {
                 </tbody>
               </table>
 
-              {/* Totals */}
+              {/* Total */}
               <div style={{ display: "flex", justifyContent: "flex-end", marginBottom: "32px" }}>
                 <div style={{ width: "260px" }}>
-                  <div style={{ display: "flex", justifyContent: "space-between", padding: "6px 0", fontSize: "12px", borderBottom: "1px solid #eee" }}>
-                    <span style={{ color: "#555" }}>Sous-total HT</span>
-                    <span style={{ fontWeight: 600 }}>{fmt(total_ht)}</span>
-                  </div>
-                  <div style={{ display: "flex", justifyContent: "space-between", padding: "6px 0", fontSize: "12px", borderBottom: "1px solid #eee" }}>
-                    <span style={{ color: "#555" }}>TVA (exonéré)</span>
-                    <span style={{ fontWeight: 600 }}>0 DJF</span>
-                  </div>
-                  <div style={{ display: "flex", justifyContent: "space-between", padding: "10px 12px", fontSize: "15px", fontWeight: 800, background: "#0e2d38", color: "white", borderRadius: "6px", marginTop: "8px" }}>
-                    <span>TOTAL TTC</span>
-                    <span>{fmt(total_ttc)}</span>
+                  <div style={{ display: "flex", justifyContent: "space-between", padding: "10px 12px", fontSize: "15px", fontWeight: 800, background: "#0e2d38", color: "white", borderRadius: "6px" }}>
+                    <span>TOTAL</span>
+                    <span>{fmt(total_ht)}</span>
                   </div>
                 </div>
               </div>
@@ -395,8 +404,8 @@ export default function DocumentPreview({ document: doc, onClose }: Props) {
               {/* Footer */}
               <div style={{ borderTop: "1px solid #ddd", paddingTop: "14px", textAlign: "center" }}>
                 <p style={{ fontSize: "10px", color: "#aaa", lineHeight: "1.8" }}>
-                  VOYAGE VOYAGE — Agence de Tourisme agréée — Djibouti-Ville, République de Djibouti<br />
-                  Tél : +253 77 07 33 77 | voyagevoyagedjib@gmail.com | voyagevoyagedj.com
+                  VOYAGE VOYAGE — Agence de Tourisme — Djibouti-Ville, République de Djibouti<br />
+                  📞 +253 77 07 33 77 &nbsp;|&nbsp; 💬 WhatsApp : +253 77 07 33 77 &nbsp;|&nbsp; voyagevoyagedjib@gmail.com &nbsp;|&nbsp; voyagevoyagedj.com
                 </p>
               </div>
             </div>
