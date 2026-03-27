@@ -12,6 +12,9 @@ export type Review = {
   comment: string;
   destination: string | null;
   created_at: string;
+  source?: "website" | "google";
+  google_review_id?: string | null;
+  avatar_url?: string | null;
 };
 
 export type Client = {
