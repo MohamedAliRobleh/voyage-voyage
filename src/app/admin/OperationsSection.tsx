@@ -291,7 +291,7 @@ function KanbanBoard({ docs, statuts, updating, onStatusChange, onConvert }: {
                   {cards.length}
                 </span>
               </div>
-              <div className="flex flex-col gap-2 min-h-[120px]">
+              <div className="flex flex-col gap-2 min-h-[80px] max-h-[60vh] overflow-y-auto pr-1 scrollbar-thin scrollbar-thumb-gray-200 scrollbar-track-transparent">
                 {cards.length === 0 && (
                   <div className="flex-1 rounded-xl border-2 border-dashed border-gray-100 flex items-center justify-center min-h-[80px]">
                     <span className="text-xs text-gray-300">Vide</span>
