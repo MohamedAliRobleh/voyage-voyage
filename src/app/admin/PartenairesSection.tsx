@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { supabase } from "@/lib/supabase";
 import type { Partenaire, Reversement } from "@/lib/supabase";
 import { motion, AnimatePresence } from "framer-motion";
@@ -57,6 +57,7 @@ export default function PartenairesSection() {
   const [selected, setSelected] = useState<Partenaire | null>(null);
   const [form, setForm] = useState<Partial<Partenaire>>({});
   const [showCreate, setShowCreate] = useState(false);
+  const topRef = useRef<HTMLDivElement>(null);
   const [createForm, setCreateForm] = useState({
     nom: "", contact: "", telephone: "", email: "",
     localisation: "", commission_defaut: 0, notes: "",
@@ -111,6 +112,20 @@ export default function PartenairesSection() {
     return { totalEncaisse, totalReverser, commissionVV, aReverser, voyages, rs };
   };
 
+  const selectPartenaire = (p: Partenaire | null) => {
+    setSelected(p);
+    if (p) topRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+  };
+
+  const deletePartenaire = async (p: Partenaire) => {
+    if (!confirm(`Supprimer le partenaire "${p.nom}" ? Cette action est irréversible.`)) return;
+    const { error } = await supabase.from("partenaires").delete().eq("id", p.id);
+    if (error) { toast.error("Erreur : " + error.message); return; }
+    toast.success("Partenaire supprimé");
+    setSelected(null);
+    loadData();
+  };
+
   const saveCreate = async () => {
     if (!createForm.nom.trim()) { toast.error("Le nom est requis"); return; }
     const { error } = await supabase.from("partenaires").insert({
@@ -138,7 +153,7 @@ export default function PartenairesSection() {
   );
 
   return (
-    <div className="flex gap-6">
+    <div ref={topRef} className="flex gap-6">
 
       {/* Left — partner list */}
       <div className={`flex flex-col gap-4 transition-all ${selected ? "w-64 shrink-0" : "flex-1"}`}>
@@ -157,7 +172,7 @@ export default function PartenairesSection() {
 
           return (
             <motion.div key={p.id} initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.07 }}
-              onClick={() => setSelected(isSelected ? null : p)}
+              onClick={() => selectPartenaire(isSelected ? null : p)}
               className={`w-full text-left bg-white rounded-2xl border shadow-sm p-5 transition-all hover:shadow-md cursor-pointer ${
                 isSelected ? "border-[#408398]/40 ring-1 ring-[#408398]/20" : "border-gray-100"
               }`}>
@@ -249,7 +264,11 @@ export default function PartenairesSection() {
                           className="flex items-center gap-1.5 px-3 py-1.5 bg-gray-100 hover:bg-gray-200 rounded-xl text-xs font-semibold text-gray-600 transition-colors">
                           <Edit2 size={12} /> Modifier
                         </button>
-                        <button onClick={() => setSelected(null)}
+                        <button onClick={() => deletePartenaire(selected)}
+                          className="flex items-center gap-1.5 px-3 py-1.5 bg-red-50 hover:bg-red-100 rounded-xl text-xs font-semibold text-red-500 transition-colors">
+                          <X size={12} /> Supprimer
+                        </button>
+                        <button onClick={() => selectPartenaire(null)}
                           className="p-1.5 hover:bg-gray-100 rounded-xl transition-colors">
                           <X size={15} className="text-gray-400" />
                         </button>
