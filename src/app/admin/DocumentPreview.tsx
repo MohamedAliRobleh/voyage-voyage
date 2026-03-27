@@ -35,7 +35,8 @@ export default function DocumentPreview({ document: doc, onClose }: Props) {
         setSent(true);
         toast.success(`${doc.type === "devis" ? "Devis" : "Facture"} envoyé(e) à ${doc.client_email} ✓`);
       } else {
-        toast.error("Erreur lors de l'envoi. Vérifiez la configuration email.");
+        const body = await res.json().catch(() => ({}));
+        toast.error(body.error ? `Erreur : ${body.error}` : "Erreur lors de l'envoi. Vérifiez la configuration email.", { duration: 8000 });
       }
     } catch {
       toast.error("Erreur réseau");

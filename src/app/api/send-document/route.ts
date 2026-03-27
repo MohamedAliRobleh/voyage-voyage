@@ -195,14 +195,10 @@ export async function POST(req: NextRequest) {
   const { error } = await resend.emails.send({
     from: "Voyage Voyage <contact@voyagevoyagedj.com>",
     to: document.client_email,
-    replyTo: "voyagevoyagedjib@gmail.com",
+    reply_to: "voyagevoyagedjib@gmail.com",
     subject,
     html: generateHTML(document),
     text: generateText(document),
-    headers: {
-      "X-Priority": "1",
-      "Importance": "high",
-    },
   });
 
   if (error) {
