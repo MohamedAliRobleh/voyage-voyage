@@ -193,7 +193,7 @@ export async function POST(req: NextRequest) {
     : `Facture ${document.numero} — Voyage Voyage`;
 
   const { error } = await resend.emails.send({
-    from: "Voyage Voyage <contact@voyagevoyagedj.com>",
+    from: "Voyage Voyage <onboarding@resend.dev>",
     to: document.client_email,
     reply_to: "voyagevoyagedjib@gmail.com",
     subject,
