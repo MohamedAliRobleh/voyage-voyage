@@ -219,14 +219,15 @@ export default function ReversementsSection() {
           </h2>
           <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
             {facturesEnAttente.map((f, i) => (
-              <div key={i} className="flex items-center justify-between px-5 py-4 border-b border-gray-50 last:border-0">
-                <div>
-                  <p className="text-sm font-semibold text-gray-800">{f.client_nom}</p>
+              <div key={i} className="flex items-center justify-between px-4 sm:px-5 py-3.5 border-b border-gray-50 last:border-0 gap-3">
+                <div className="min-w-0 flex-1">
+                  <p className="text-sm font-semibold text-gray-800 truncate">{f.client_nom}</p>
                   <p className="text-xs text-gray-400">{f.numero} · {fmt(f.total)}</p>
                 </div>
                 <button onClick={() => openModal(f)}
-                  className="flex items-center gap-1.5 px-3.5 py-2 bg-[#408398] text-white text-xs font-semibold rounded-xl hover:bg-[#326e80] transition-colors">
-                  Clôturer le voyage
+                  className="flex items-center gap-1.5 px-3 sm:px-3.5 py-2 bg-[#408398] text-white text-xs font-semibold rounded-xl hover:bg-[#326e80] transition-colors shrink-0 whitespace-nowrap">
+                  <span className="hidden sm:inline">Clôturer le voyage</span>
+                  <span className="sm:hidden">Clôturer</span>
                 </button>
               </div>
             ))}
@@ -240,32 +241,32 @@ export default function ReversementsSection() {
           <h2 className="text-sm font-semibold text-gray-400 uppercase tracking-widest mb-4">Historique</h2>
           <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
             {reversements.map((r, i) => (
-              <div key={i} className="flex items-center justify-between px-5 py-4 border-b border-gray-50 last:border-0">
+              <div key={i} className="flex items-start justify-between px-4 sm:px-5 py-3.5 border-b border-gray-50 last:border-0 gap-3">
                 <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2 mb-0.5">
-                    <p className="text-sm font-semibold text-gray-800">{r.client_nom}</p>
+                  <div className="flex items-center gap-2 mb-0.5 flex-wrap">
+                    <p className="text-sm font-semibold text-gray-800 truncate">{r.client_nom}</p>
                     <span className="text-[10px] text-gray-400">{r.facture_numero}</span>
                   </div>
-                  <p className="text-xs text-gray-400">{r.site_nom} · Encaissé {fmt(r.total_client)}</p>
-                </div>
-                <div className="flex items-center gap-4">
-                  <div className="text-right">
-                    <p className="text-xs font-bold text-red-500">{fmt(r.marge)}</p>
-                    <p className="text-[10px] text-gray-400">dû au partenaire</p>
+                  <p className="text-xs text-gray-400 truncate">{r.site_nom} · {fmt(r.total_client)} encaissé</p>
+                  <div className="flex items-center gap-3 mt-1.5">
+                    <div>
+                      <p className="text-xs font-bold text-red-500">{fmt(r.marge)}</p>
+                      <p className="text-[10px] text-gray-400">dû partenaire</p>
+                    </div>
+                    <div className="hidden sm:block">
+                      <p className="text-xs font-bold text-purple-600">{fmt(r.montant_reverser)}</p>
+                      <p className="text-[10px] text-gray-400">commission agence</p>
+                    </div>
                   </div>
-                  <div className="text-right">
-                    <p className="text-xs font-bold text-purple-600">{fmt(r.montant_reverser)}</p>
-                    <p className="text-[10px] text-gray-400">commission agence</p>
-                  </div>
-                  <button onClick={() => toggleStatut(r)}
-                    className={`text-[10px] font-bold px-2.5 py-1.5 rounded-lg transition-colors ${
-                      r.statut === "reversé"
-                        ? "bg-green-50 text-green-600 hover:bg-green-100"
-                        : "bg-red-50 text-red-500 hover:bg-red-100"
-                    }`}>
-                    {r.statut === "reversé" ? "Reversé ✓" : "À reverser"}
-                  </button>
                 </div>
+                <button onClick={() => toggleStatut(r)}
+                  className={`text-[10px] font-bold px-2.5 py-1.5 rounded-lg transition-colors shrink-0 ${
+                    r.statut === "reversé"
+                      ? "bg-green-50 text-green-600 hover:bg-green-100"
+                      : "bg-red-50 text-red-500 hover:bg-red-100"
+                  }`}>
+                  {r.statut === "reversé" ? "Reversé ✓" : "À reverser"}
+                </button>
               </div>
             ))}
           </div>

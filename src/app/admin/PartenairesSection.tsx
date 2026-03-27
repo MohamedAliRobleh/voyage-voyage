@@ -156,10 +156,10 @@ export default function PartenairesSection() {
   );
 
   return (
-    <div className="flex gap-6">
+    <div className="flex flex-col md:flex-row gap-6">
 
       {/* Left — partner list */}
-      <div className={`flex flex-col gap-4 transition-all ${selected ? "w-64 shrink-0" : "flex-1"}`}>
+      <div className={`flex flex-col gap-4 transition-all ${selected ? "md:w-64 md:shrink-0" : "flex-1"}`}>
         <div className="flex items-center justify-between">
           <h2 className="text-sm font-semibold text-gray-400 uppercase tracking-widest">Sites partenaires</h2>
           <button onClick={() => setShowCreate(true)}
@@ -197,7 +197,7 @@ export default function PartenairesSection() {
 
               {/* Stats row */}
               {!selected && (
-                <div className="grid grid-cols-4 gap-2 mt-3">
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 mt-3">
                   {[
                     { label: "Voyages", value: stats.voyages, color: "text-gray-700" },
                     { label: "CA", value: stats.totalEncaisse > 0 ? `${(stats.totalEncaisse / 1000).toFixed(0)}k` : "—", color: "text-blue-600" },
@@ -262,13 +262,13 @@ export default function PartenairesSection() {
                           <StarRating value={selected.note_performance} />
                         </div>
                       </div>
-                      <div className="flex gap-2">
+                      <div className="flex gap-1.5 flex-wrap justify-end">
                         <button onClick={() => openEdit(selected)}
-                          className="flex items-center gap-1.5 px-3 py-1.5 bg-gray-100 hover:bg-gray-200 rounded-xl text-xs font-semibold text-gray-600 transition-colors">
+                          className="flex items-center gap-1.5 px-2.5 py-1.5 bg-gray-100 hover:bg-gray-200 rounded-xl text-xs font-semibold text-gray-600 transition-colors">
                           <Edit2 size={12} /> Modifier
                         </button>
                         <button onClick={() => deletePartenaire(selected)}
-                          className="flex items-center gap-1.5 px-3 py-1.5 bg-red-50 hover:bg-red-100 rounded-xl text-xs font-semibold text-red-500 transition-colors">
+                          className="flex items-center gap-1.5 px-2.5 py-1.5 bg-red-50 hover:bg-red-100 rounded-xl text-xs font-semibold text-red-500 transition-colors">
                           <X size={12} /> Supprimer
                         </button>
                         <button onClick={() => selectPartenaire(null)}
@@ -279,7 +279,7 @@ export default function PartenairesSection() {
                     </div>
 
                     {/* Contact info */}
-                    <div className="grid grid-cols-2 gap-3">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                       {[
                         { icon: Phone, label: "Téléphone", value: selected.telephone || "—" },
                         { icon: Mail, label: "Email", value: selected.email || "—" },
@@ -345,24 +345,21 @@ export default function PartenairesSection() {
                         <p className="text-xs font-bold text-gray-500 uppercase tracking-wider">Historique des voyages</p>
                       </div>
                       {stats.rs.map((r, i) => (
-                        <div key={i} className="flex items-center justify-between px-5 py-3.5 border-b border-gray-50 last:border-0">
-                          <div>
-                            <p className="text-sm font-semibold text-gray-800">{r.client_nom}</p>
-                            <p className="text-xs text-gray-400">{r.facture_numero}</p>
+                        <div key={i} className="flex items-center justify-between px-4 py-3 border-b border-gray-50 last:border-0 gap-2">
+                          <div className="min-w-0 flex-1">
+                            <p className="text-sm font-semibold text-gray-800 truncate">{r.client_nom}</p>
+                            <p className="text-[10px] text-gray-400">{r.facture_numero}</p>
+                            <p className="text-[10px] text-red-500 font-bold mt-0.5">{fmt(r.marge)} <span className="font-normal text-gray-400">dû</span></p>
                           </div>
-                          <div className="flex items-center gap-4 text-right">
-                            <div>
+                          <div className="flex items-center gap-2 shrink-0">
+                            <div className="hidden sm:block text-right">
                               <p className="text-xs font-bold text-gray-700">{fmt(r.total_client)}</p>
                               <p className="text-[10px] text-gray-400">encaissé</p>
                             </div>
-                            <div>
-                              <p className="text-xs font-bold text-red-500">{fmt(r.marge)}</p>
-                              <p className="text-[10px] text-gray-400">dû au partenaire</p>
-                            </div>
-                            <span className={`text-[10px] font-bold px-2 py-1 rounded-lg ${
+                            <span className={`text-[10px] font-bold px-2 py-1 rounded-lg whitespace-nowrap ${
                               r.statut === "reversé" ? "bg-green-50 text-green-600" : "bg-red-50 text-red-500"
                             }`}>
-                              {r.statut === "reversé" ? "✓" : "En attente"}
+                              {r.statut === "reversé" ? "✓ Reversé" : "En attente"}
                             </span>
                           </div>
                         </div>
