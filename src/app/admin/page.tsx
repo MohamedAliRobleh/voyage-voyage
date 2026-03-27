@@ -172,31 +172,33 @@ export default function AdminPage() {
           className="flex items-center gap-2 px-3 py-2 bg-white/10 hover:bg-white/20 rounded-lg text-sm transition-colors"
         >
           <LogOut size={15} />
-          Déconnexion
+          <span className="hidden sm:inline">Déconnexion</span>
         </button>
       </div>
 
       {/* Tab Navigation */}
-      <div className="bg-white border-b border-gray-100 px-6">
-        <div className="max-w-5xl mx-auto flex gap-1">
-          {tabs.map(tab => (
-            <button
-              key={tab.id}
-              onClick={() => setActiveTab(tab.id)}
-              className={`flex items-center gap-2 px-4 py-3.5 text-sm font-semibold border-b-2 transition-colors ${
-                activeTab === tab.id
-                  ? "border-[#408398] text-[#408398]"
-                  : "border-transparent text-gray-400 hover:text-gray-600"
-              }`}
-            >
-              {tab.icon}
-              {tab.label}
-            </button>
-          ))}
+      <div className="bg-white border-b border-gray-100 sticky top-0 z-40 shadow-sm">
+        <div className="max-w-5xl mx-auto overflow-x-auto scrollbar-hide">
+          <div className="flex gap-0.5 px-2 min-w-max">
+            {tabs.map(tab => (
+              <button
+                key={tab.id}
+                onClick={() => setActiveTab(tab.id)}
+                className={`flex flex-col sm:flex-row items-center gap-1 sm:gap-2 px-3 sm:px-4 py-2.5 sm:py-3.5 text-xs sm:text-sm font-semibold border-b-2 transition-colors shrink-0 ${
+                  activeTab === tab.id
+                    ? "border-[#408398] text-[#408398]"
+                    : "border-transparent text-gray-400 hover:text-gray-600"
+                }`}
+              >
+                {tab.icon}
+                <span className="text-[10px] sm:text-sm leading-none">{tab.label}</span>
+              </button>
+            ))}
+          </div>
         </div>
       </div>
 
-      <div className="max-w-5xl mx-auto px-4 py-8">
+      <div className="max-w-5xl mx-auto px-3 sm:px-4 py-4 sm:py-8">
 
         {/* Dashboard Tab */}
         {activeTab === "dashboard" && <DashboardSection />}
