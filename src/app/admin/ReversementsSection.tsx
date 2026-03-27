@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { supabase } from "@/lib/supabase";
-import type { Facture, Reversement } from "@/lib/supabase";
+import type { Facture, Reversement, Partenaire } from "@/lib/supabase";
 import { motion, AnimatePresence } from "framer-motion";
 import { X, TrendingUp, ArrowDownCircle, CheckCircle, Wallet, Building2 } from "lucide-react";
 import toast from "react-hot-toast";
@@ -22,6 +22,7 @@ interface ClotureModal {
 export default function ReversementsSection() {
   const [factures, setFactures] = useState<Facture[]>([]);
   const [reversements, setReversements] = useState<Reversement[]>([]);
+  const [partenaires, setPartenaires] = useState<Partenaire[]>([]);
   const [loading, setLoading] = useState(true);
   const [modal, setModal] = useState<ClotureModal | null>(null);
 
@@ -35,13 +36,26 @@ export default function ReversementsSection() {
 
   const loadData = async () => {
     setLoading(true);
-    const [{ data: f }, { data: r }] = await Promise.all([
+    const [{ data: f }, { data: r }, { data: p }] = await Promise.all([
       supabase.from("factures").select("*").eq("statut", "payé").order("created_at", { ascending: false }),
       supabase.from("reversements").select("*").order("created_at", { ascending: false }),
+      supabase.from("partenaires").select("*"),
     ]);
     setFactures(f || []);
     setReversements(r || []);
+    setPartenaires(p || []);
     setLoading(false);
+  };
+
+  const applyCommissionPartenaire = (site: string) => {
+    const p = partenaires.find(p => p.nom.toLowerCase() === site.toLowerCase());
+    if (p && p.commission_defaut) {
+      setUnite("%");
+      setValeur(String(p.commission_defaut));
+    } else {
+      setValeur("");
+    }
+    return p;
   };
 
   const detectSite = (facture: Facture): string => {
@@ -51,11 +65,18 @@ export default function ReversementsSection() {
   };
 
   const openModal = (facture: Facture) => {
+    const site = detectSite(facture);
     setModal({ facture });
-    setSiteNom(detectSite(facture));
-    setUnite("%");
-    setValeur("");
+    setSiteNom(site);
     setNotesR("");
+    const p = partenaires.find(p => p.nom.toLowerCase() === site.toLowerCase());
+    if (p && p.commission_defaut) {
+      setUnite("%");
+      setValeur(String(p.commission_defaut));
+    } else {
+      setUnite("%");
+      setValeur("");
+    }
   };
 
   const montantCalcule = (): number => {
@@ -280,7 +301,7 @@ export default function ReversementsSection() {
                 {/* Site */}
                 <div>
                   <label className="block text-[10px] font-bold uppercase tracking-wider text-gray-400 mb-1.5">Site touristique</label>
-                  <select value={siteNom} onChange={e => setSiteNom(e.target.value)}
+                  <select value={siteNom} onChange={e => { setSiteNom(e.target.value); applyCommissionPartenaire(e.target.value); }}
                     className="w-full px-3.5 py-2.5 border border-gray-200 rounded-xl text-sm text-gray-900 focus:outline-none focus:border-[#408398]">
                     {SITES.map(s => <option key={s}>{s}</option>)}
                   </select>
@@ -288,7 +309,14 @@ export default function ReversementsSection() {
 
                 {/* Montant à reverser */}
                 <div>
-                  <label className="block text-[10px] font-bold uppercase tracking-wider text-gray-400 mb-1.5">Commission Voyage Voyage (agence)</label>
+                  <div className="flex items-center justify-between mb-1.5">
+                    <label className="block text-[10px] font-bold uppercase tracking-wider text-gray-400">Commission Voyage Voyage (agence)</label>
+                    {partenaires.find(p => p.nom.toLowerCase() === siteNom.toLowerCase())?.commission_defaut ? (
+                      <span className="text-[10px] text-[#408398] font-semibold bg-[#408398]/10 px-2 py-0.5 rounded-lg">
+                        Défaut partenaire : {partenaires.find(p => p.nom.toLowerCase() === siteNom.toLowerCase())?.commission_defaut}%
+                      </span>
+                    ) : null}
+                  </div>
                   <div className="flex gap-2">
                     {/* Toggle unité */}
                     <div className="flex border border-gray-200 rounded-xl overflow-hidden shrink-0">
