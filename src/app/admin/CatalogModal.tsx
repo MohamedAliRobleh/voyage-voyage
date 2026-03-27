@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { X, Plus, ChevronDown, Trash2 } from "lucide-react";
+import toast from "react-hot-toast";
 import { motion, AnimatePresence } from "framer-motion";
 import { catalog } from "@/lib/catalog";
 import type { CatalogFormule } from "@/lib/catalog";
@@ -109,10 +110,13 @@ export default function CatalogModal({ onAdd, onClose }: Props) {
       age_enfant: null,
     };
     const { data, error } = await supabase.from("catalog_formules_custom").insert(row).select().single();
-    if (!error && data) {
+    if (error) {
+      toast.error("Erreur : " + error.message);
+    } else if (data) {
       setCustomFormules(prev => [...prev, data]);
       setShowForm(false);
       setDraft(emptyDraft());
+      toast.success("Formule ajoutée ✓");
     }
     setSaving(false);
   };
