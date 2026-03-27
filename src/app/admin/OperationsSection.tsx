@@ -128,13 +128,17 @@ function CountdownBadge({ date }: { date: string | null }) {
 function KanbanCard({
   facture,
   onStatusChange,
+  onConvert,
 }: {
   facture: Facture;
   onStatusChange: (id: string, statut: Facture["statut"]) => void;
+  onConvert: (facture: Facture) => void;
 }) {
   const site = detectSite(facture);
   const next = (facture.type === "devis" ? NEXT_STATUT_DEVIS : NEXT_STATUT_FACTURE)[facture.statut];
   const colors = STATUT_COLORS[facture.statut];
+  const isDevisAccepte = facture.type === "devis" && facture.statut === "accepté";
+  const isFacturePaye  = facture.type === "facture" && facture.statut === "payé";
 
   return (
     <motion.div
@@ -172,7 +176,7 @@ function KanbanCard({
         </span>
       </div>
 
-      {/* Avancer */}
+      {/* Avancer statut */}
       {next && (
         <button
           onClick={() => onStatusChange(facture.id, next)}
@@ -182,7 +186,20 @@ function KanbanCard({
           {STATUT_LABELS[next]}
         </button>
       )}
-      {!next && (
+
+      {/* Devis accepté → Convertir en facture */}
+      {isDevisAccepte && (
+        <button
+          onClick={() => onConvert(facture)}
+          className="w-full flex items-center justify-center gap-1.5 text-xs font-semibold py-1.5 rounded-lg bg-emerald-500 hover:bg-emerald-600 text-white transition-colors mt-1"
+        >
+          <CheckCircle2 size={13} />
+          Convertir en facture
+        </button>
+      )}
+
+      {/* Facture payée */}
+      {isFacturePaye && (
         <div className="flex items-center justify-center gap-1.5 text-xs font-semibold py-1.5 text-teal-600">
           <CheckCircle2 size={13} />
           Payé — à clôturer
@@ -223,11 +240,12 @@ function ImminentCard({ facture }: { facture: Facture }) {
   );
 }
 
-function KanbanBoard({ docs, statuts, updating, onStatusChange }: {
+function KanbanBoard({ docs, statuts, updating, onStatusChange, onConvert }: {
   docs: Facture[];
   statuts: Facture["statut"][];
   updating: string | null;
   onStatusChange: (id: string, statut: Facture["statut"]) => void;
+  onConvert: (facture: Facture) => void;
 }) {
   return (
     <div className="overflow-x-auto pb-4">
@@ -256,7 +274,7 @@ function KanbanBoard({ docs, statuts, updating, onStatusChange }: {
                         <div className="w-4 h-4 border-2 border-[#408398]/30 border-t-[#408398] rounded-full animate-spin" />
                       </div>
                     )}
-                    <KanbanCard facture={f} onStatusChange={onStatusChange} />
+                    <KanbanCard facture={f} onStatusChange={onStatusChange} onConvert={onConvert} />
                   </div>
                 ))}
               </div>
@@ -303,6 +321,24 @@ export default function OperationsSection() {
     await supabase.from("factures").update({ statut }).eq("id", id);
     setFactures(prev => prev.map(f => f.id === id ? { ...f, statut } : f));
     setUpdating(null);
+  };
+
+  const convertirEnFacture = async (doc: Facture) => {
+    const year = new Date().getFullYear();
+    const existing = factures.filter(f => f.numero.startsWith(`FAC-${year}-`));
+    const numero = `FAC-${year}-${(existing.length + 1).toString().padStart(3, "0")}`;
+    const { error } = await supabase.from("factures").insert({
+      numero, type: "facture",
+      client_id: doc.client_id || null,
+      client_nom: doc.client_nom, client_email: doc.client_email,
+      date: new Date().toISOString().slice(0, 10),
+      echeance: null, statut: "confirmé",
+      lignes: doc.lignes, total: doc.total, notes: doc.notes,
+      date_depart: doc.date_depart, date_retour: doc.date_retour,
+      token: crypto.randomUUID(),
+    });
+    if (error) return;
+    // reload — realtime will catch it too
   };
 
   const devis    = factures.filter(f => f.type === "devis");
@@ -355,7 +391,7 @@ export default function OperationsSection() {
             <span className="w-2 h-2 rounded-full bg-amber-400 inline-block" />
             Devis ({devis.length})
           </h3>
-          <KanbanBoard docs={devis} statuts={STATUTS_DEVIS} updating={updating} onStatusChange={handleStatusChange} />
+          <KanbanBoard docs={devis} statuts={STATUTS_DEVIS} updating={updating} onStatusChange={handleStatusChange} onConvert={convertirEnFacture} />
         </section>
       )}
 
@@ -366,7 +402,7 @@ export default function OperationsSection() {
             <span className="w-2 h-2 rounded-full bg-[#408398] inline-block" />
             Factures ({facList.length})
           </h3>
-          <KanbanBoard docs={facList} statuts={STATUTS_FACTURE} updating={updating} onStatusChange={handleStatusChange} />
+          <KanbanBoard docs={facList} statuts={STATUTS_FACTURE} updating={updating} onStatusChange={handleStatusChange} onConvert={convertirEnFacture} />
         </section>
       )}
 
