@@ -116,9 +116,9 @@ export default function PartenairesSection() {
           const isSelected = selected?.id === p.id;
 
           return (
-            <motion.button key={p.id} initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.07 }}
+            <motion.div key={p.id} initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.07 }}
               onClick={() => setSelected(isSelected ? null : p)}
-              className={`w-full text-left bg-white rounded-2xl border shadow-sm p-5 transition-all hover:shadow-md ${
+              className={`w-full text-left bg-white rounded-2xl border shadow-sm p-5 transition-all hover:shadow-md cursor-pointer ${
                 isSelected ? "border-[#408398]/40 ring-1 ring-[#408398]/20" : "border-gray-100"
               }`}>
 
@@ -166,7 +166,7 @@ export default function PartenairesSection() {
               <div className="mt-2 text-[10px] text-gray-400">
                 Commission par défaut : <span className="font-bold text-gray-600">{p.commission_defaut}%</span>
               </div>
-            </motion.button>
+            </motion.div>
           );
         })}
       </div>
