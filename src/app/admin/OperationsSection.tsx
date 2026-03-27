@@ -229,7 +229,14 @@ export default function OperationsSection() {
     setLoading(false);
   }, []);
 
-  useEffect(() => { load(); }, [load]);
+  useEffect(() => {
+    load();
+    const channel = supabase
+      .channel("factures-ops")
+      .on("postgres_changes", { event: "*", schema: "public", table: "factures" }, () => { load(); })
+      .subscribe();
+    return () => { supabase.removeChannel(channel); };
+  }, [load]);
 
   const handleStatusChange = async (id: string, statut: Facture["statut"]) => {
     setUpdating(id);

@@ -132,6 +132,11 @@ export default function FacturesSection() {
   useEffect(() => {
     loadData(true);
     loadModeles();
+    const channel = supabase
+      .channel("factures-section")
+      .on("postgres_changes", { event: "*", schema: "public", table: "factures" }, () => { loadData(); })
+      .subscribe();
+    return () => { supabase.removeChannel(channel); };
   }, []);
 
   const loadData = async (initial = false) => {
