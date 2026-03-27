@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { supabase } from "@/lib/supabase";
 import type { Client, Facture, LigneFacture } from "@/lib/supabase";
-import { Plus, Trash2, X, FileText, Check, Send, Eye, TrendingUp, Clock, ArrowRight, BookOpen, ChevronRight, Settings } from "lucide-react";
+import { Plus, Trash2, X, FileText, Check, Send, Eye, TrendingUp, Clock, ArrowRight, BookOpen, ChevronRight, Settings, Upload, Download } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import toast from "react-hot-toast";
 import DocumentPreview from "./DocumentPreview";
@@ -101,6 +101,9 @@ export default function FacturesSection() {
   const [previewDoc, setPreviewDoc] = useState<Facture | null>(null);
   const [filterType, setFilterType] = useState<"all" | "facture" | "devis">("all");
   const [showCatalog, setShowCatalog] = useState(false);
+  const [importing, setImporting] = useState(false);
+  const [showImportModal, setShowImportModal] = useState(false);
+  const [importResults, setImportResults] = useState<{ ok: number; errors: string[] } | null>(null);
 
   // Modèles de notes
   const [modeles, setModeles] = useState({
@@ -139,6 +142,137 @@ export default function FacturesSection() {
     setFactures(f || []);
     setClients(c || []);
     if (initial) setLoading(false);
+  };
+
+  const downloadTemplate = async () => {
+    const XLSX = (await import("xlsx")).default;
+    const headers = [
+      "type", "numero", "client_nom", "client_email",
+      "date", "date_depart", "date_retour", "echeance", "statut", "notes",
+      "description_1", "quantite_1", "prix_1",
+      "description_2", "quantite_2", "prix_2",
+      "description_3", "quantite_3", "prix_3",
+      "description_4", "quantite_4", "prix_4",
+      "description_5", "quantite_5", "prix_5",
+    ];
+    const example = [
+      "facture", "FAC-2024-001", "Ahmed Hassan", "ahmed@email.com",
+      "15/01/2024", "20/01/2024", "22/01/2024", "", "payé",
+      "Hébergement inclus, petit-déjeuner compris",
+      "Nuitée Lac Abbé — 2 adultes", "1", "54000",
+      "Transport aller-retour", "1", "15000",
+      "", "", "", "", "", "", "", "", "",
+    ];
+    const example2 = [
+      "devis", "", "Fatima Ali", "fatima@email.com",
+      "10/03/2024", "15/03/2024", "17/03/2024", "30/03/2024", "envoyé", "",
+      "Excursion Hougeif — 2 adultes 1 enfant", "1", "45000",
+      "Snorkeling", "2", "5000",
+      "", "", "", "", "", "", "", "", "",
+    ];
+    const ws = XLSX.utils.aoa_to_sheet([headers, example, example2]);
+    ws["!cols"] = headers.map((h, i) => ({
+      wch: i < 10 ? (h === "notes" ? 40 : 18) : (i % 3 === 0 ? 30 : 8),
+    }));
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "Factures & Devis");
+    XLSX.writeFile(wb, "modele_import_voyagevoyage.xlsx");
+    toast.success("Modèle téléchargé ✓");
+  };
+
+  const parseDate = (val: string | number | undefined): string | null => {
+    if (!val) return null;
+    if (typeof val === "number") {
+      const d = new Date(Math.round((val - 25569) * 86400 * 1000));
+      return localDateStr(d);
+    }
+    const s = String(val).trim();
+    const [a, b, c] = s.split(/[\/\-]/);
+    if (!a || !b || !c) return null;
+    if (c.length === 4) return `${c}-${b.padStart(2,"0")}-${a.padStart(2,"0")}`;
+    return `${a}-${b.padStart(2,"0")}-${c.padStart(2,"0")}`;
+  };
+
+  const handleImport = async (file: File) => {
+    setImporting(true);
+    setImportResults(null);
+    try {
+      const XLSX = (await import("xlsx")).default;
+      const buffer = await file.arrayBuffer();
+      const wb = XLSX.read(buffer, { type: "array" });
+      const ws = wb.Sheets[wb.SheetNames[0]];
+      const rows = XLSX.utils.sheet_to_json<Record<string, string | number>>(ws, { defval: "" });
+
+      let ok = 0;
+      const errors: string[] = [];
+
+      for (let i = 0; i < rows.length; i++) {
+        const row = rows[i];
+        const rowNum = i + 2;
+        const type = String(row["type"] || "").toLowerCase().trim();
+        const client_nom = String(row["client_nom"] || "").trim();
+
+        if (!type || !["facture", "devis"].includes(type)) {
+          errors.push(`Ligne ${rowNum} : type invalide (doit être "facture" ou "devis")`);
+          continue;
+        }
+        if (!client_nom) {
+          errors.push(`Ligne ${rowNum} : client_nom manquant`);
+          continue;
+        }
+
+        const lignes: LigneFacture[] = [];
+        for (let n = 1; n <= 5; n++) {
+          const desc = String(row[`description_${n}`] || "").trim();
+          if (!desc) continue;
+          const qte = Number(row[`quantite_${n}`]) || 1;
+          const prix = Number(row[`prix_${n}`]) || 0;
+          lignes.push({ description: desc, quantite: qte, prix_unitaire: prix, total: qte * prix });
+        }
+        if (lignes.length === 0) {
+          errors.push(`Ligne ${rowNum} : aucune prestation trouvée`);
+          continue;
+        }
+
+        const total = lignes.reduce((s, l) => s + l.total, 0);
+        const rawNumero = String(row["numero"] || "").trim();
+        const numero = rawNumero || generateNumero([...factures, ...Array(ok).fill({ numero: `TMP-${ok}` }) as Facture[]], type as "facture" | "devis");
+        const statut = String(row["statut"] || "brouillon").trim() as Facture["statut"];
+        const validStatuts = ["brouillon","envoyé","accepté","en_negociation","confirmé","payé"];
+
+        const { error } = await supabase.from("factures").insert({
+          numero,
+          type,
+          client_nom,
+          client_email: String(row["client_email"] || "").trim(),
+          date: parseDate(row["date"] as string) || localDateStr(),
+          date_depart: parseDate(row["date_depart"] as string),
+          date_retour: parseDate(row["date_retour"] as string),
+          echeance: parseDate(row["echeance"] as string),
+          statut: validStatuts.includes(statut) ? statut : "brouillon",
+          lignes,
+          total,
+          notes: String(row["notes"] || "").trim(),
+          token: crypto.randomUUID(),
+        });
+
+        if (error) {
+          errors.push(`Ligne ${rowNum} (${client_nom}) : ${error.message}`);
+        } else {
+          ok++;
+        }
+      }
+
+      setImportResults({ ok, errors });
+      if (ok > 0) {
+        toast.success(`${ok} document${ok > 1 ? "s" : ""} importé${ok > 1 ? "s" : ""} ✓`);
+        loadData();
+      }
+    } catch (e) {
+      toast.error("Erreur de lecture du fichier Excel");
+    } finally {
+      setImporting(false);
+    }
   };
 
   const loadModeles = async () => {
@@ -443,6 +577,10 @@ export default function FacturesSection() {
             ))}
           </div>
           <div className="flex gap-2">
+            <button onClick={() => setShowImportModal(true)}
+              className="flex items-center gap-1.5 px-3.5 py-2 bg-emerald-600 text-white rounded-xl text-xs font-semibold hover:bg-emerald-700 transition-colors">
+              <Upload size={13} /> <span className="hidden sm:inline">Importer Excel</span><span className="sm:hidden">Import</span>
+            </button>
             <button onClick={() => openForm("devis")}
               className="flex items-center gap-1.5 px-3.5 py-2 bg-amber-500 text-white rounded-xl text-xs font-semibold hover:bg-amber-600 transition-colors">
               <Plus size={13} /> <span className="hidden sm:inline">Nouveau devis</span><span className="sm:hidden">Devis</span>
@@ -810,6 +948,98 @@ export default function FacturesSection() {
             }}
             onClose={() => setShowCatalog(false)}
           />
+        )}
+      </AnimatePresence>
+
+      {/* Import Modal */}
+      <AnimatePresence>
+        {showImportModal && (
+          <>
+            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+              className="fixed inset-0 bg-black/40 backdrop-blur-sm z-50" onClick={() => { setShowImportModal(false); setImportResults(null); }} />
+            <motion.div initial={{ opacity: 0, y: 40 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 40 }}
+              className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-6">
+              <div className="bg-white rounded-t-3xl sm:rounded-2xl shadow-2xl w-full sm:max-w-lg">
+
+                <div className="px-6 py-4 border-b border-gray-100 flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <div className="w-8 h-8 rounded-xl bg-emerald-100 flex items-center justify-center">
+                      <Upload size={14} className="text-emerald-600" />
+                    </div>
+                    <div>
+                      <h3 className="text-sm font-bold text-gray-900">Importer des factures / devis</h3>
+                      <p className="text-[10px] text-gray-400">Fichier Excel (.xlsx) selon le modèle fourni</p>
+                    </div>
+                  </div>
+                  <button onClick={() => { setShowImportModal(false); setImportResults(null); }}
+                    className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-xl transition-colors">
+                    <X size={16} />
+                  </button>
+                </div>
+
+                <div className="px-6 py-5 space-y-4">
+                  {/* Step 1 — Download template */}
+                  <div className="bg-blue-50 rounded-xl p-4">
+                    <p className="text-xs font-bold text-blue-700 mb-1">Étape 1 — Télécharger le modèle</p>
+                    <p className="text-[11px] text-blue-600 mb-3">Remplissez ce fichier Excel avec vos anciennes factures et devis, puis importez-le.</p>
+                    <button onClick={downloadTemplate}
+                      className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg text-xs font-semibold hover:bg-blue-700 transition-colors">
+                      <Download size={13} /> Télécharger le modèle Excel
+                    </button>
+                  </div>
+
+                  {/* Step 2 — Import file */}
+                  <div className="bg-gray-50 rounded-xl p-4">
+                    <p className="text-xs font-bold text-gray-700 mb-1">Étape 2 — Importer le fichier rempli</p>
+                    <p className="text-[11px] text-gray-500 mb-3">Sélectionnez votre fichier Excel (.xlsx) complété.</p>
+                    <label className={`flex items-center justify-center gap-2 px-4 py-3 rounded-xl border-2 border-dashed text-xs font-semibold transition-colors cursor-pointer
+                      ${importing ? "border-gray-200 text-gray-300 cursor-not-allowed" : "border-emerald-300 text-emerald-600 hover:bg-emerald-50"}`}>
+                      {importing ? (
+                        <><div className="w-4 h-4 border-2 border-emerald-300 border-t-emerald-600 rounded-full animate-spin" /> Importation en cours...</>
+                      ) : (
+                        <><Upload size={14} /> Choisir le fichier Excel</>
+                      )}
+                      <input type="file" accept=".xlsx,.xls" className="hidden" disabled={importing}
+                        onChange={e => { const f = e.target.files?.[0]; if (f) handleImport(f); e.target.value = ""; }} />
+                    </label>
+                  </div>
+
+                  {/* Results */}
+                  {importResults && (
+                    <motion.div initial={{ opacity: 0, y: 5 }} animate={{ opacity: 1, y: 0 }}
+                      className="rounded-xl border overflow-hidden">
+                      <div className={`px-4 py-3 flex items-center gap-2 ${importResults.ok > 0 ? "bg-emerald-50" : "bg-gray-50"}`}>
+                        <Check size={14} className="text-emerald-600" />
+                        <span className="text-sm font-bold text-emerald-700">
+                          {importResults.ok} document{importResults.ok > 1 ? "s" : ""} importé{importResults.ok > 1 ? "s" : ""} avec succès
+                        </span>
+                      </div>
+                      {importResults.errors.length > 0 && (
+                        <div className="px-4 py-3 bg-red-50">
+                          <p className="text-[10px] font-bold text-red-600 uppercase mb-2">Lignes ignorées ({importResults.errors.length})</p>
+                          <ul className="space-y-1">
+                            {importResults.errors.map((e, i) => (
+                              <li key={i} className="text-[11px] text-red-500">{e}</li>
+                            ))}
+                          </ul>
+                        </div>
+                      )}
+                    </motion.div>
+                  )}
+
+                  {/* Format hint */}
+                  <div className="text-[10px] text-gray-400 space-y-0.5">
+                    <p className="font-semibold text-gray-500">Format des dates :</p>
+                    <p>• DD/MM/AAAA (ex: 15/01/2024) ou AAAA-MM-JJ (ex: 2024-01-15)</p>
+                    <p className="font-semibold text-gray-500 mt-1">Valeurs valides pour "statut" :</p>
+                    <p>• brouillon · envoyé · accepté · confirmé · payé</p>
+                    <p className="font-semibold text-gray-500 mt-1">Valeurs valides pour "type" :</p>
+                    <p>• facture · devis</p>
+                  </div>
+                </div>
+              </div>
+            </motion.div>
+          </>
         )}
       </AnimatePresence>
 
