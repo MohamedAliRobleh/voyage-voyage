@@ -200,38 +200,17 @@ export default function AdminPage() {
 
       <div className="max-w-5xl mx-auto px-3 sm:px-4 py-4 sm:py-8">
 
-        {/* Dashboard Tab */}
-        {activeTab === "dashboard" && <DashboardSection />}
-
-        {/* Clients Tab */}
-        {activeTab === "clients" && <ClientsSection />}
-
-        {/* Factures Tab */}
-        {activeTab === "factures" && <FacturesSection />}
-
-        {/* Calendrier Tab */}
-        {activeTab === "calendrier" && <CalendarSection />}
-
-        {/* Partenaires Tab */}
-        {activeTab === "partenaires" && <PartenairesSection />}
-
-        {/* Reversements Tab */}
-        {activeTab === "reversements" && <ReversementsSection />}
-
-        {/* Trésorerie Tab */}
-        {activeTab === "tresorerie" && <TresorerieSection />}
-
-        {/* Opérations Tab */}
-        {activeTab === "operations" && <OperationsSection />}
-
-        {/* Analytics Tab */}
-        {activeTab === "analytics" && <AnalyticsSection />}
-
-        {/* Rapports Tab */}
-        {activeTab === "rapports" && <RapportsSection />}
-
-        {/* Réputation Tab */}
-        {activeTab === "reputation" && <ReputationSection />}
+        <div className={activeTab === "dashboard" ? "" : "hidden"}><DashboardSection /></div>
+        <div className={activeTab === "clients" ? "" : "hidden"}><ClientsSection /></div>
+        <div className={activeTab === "factures" ? "" : "hidden"}><FacturesSection /></div>
+        <div className={activeTab === "calendrier" ? "" : "hidden"}><CalendarSection /></div>
+        <div className={activeTab === "partenaires" ? "" : "hidden"}><PartenairesSection /></div>
+        <div className={activeTab === "reversements" ? "" : "hidden"}><ReversementsSection /></div>
+        <div className={activeTab === "tresorerie" ? "" : "hidden"}><TresorerieSection /></div>
+        <div className={activeTab === "operations" ? "" : "hidden"}><OperationsSection /></div>
+        <div className={activeTab === "analytics" ? "" : "hidden"}><AnalyticsSection /></div>
+        <div className={activeTab === "rapports" ? "" : "hidden"}><RapportsSection /></div>
+        <div className={activeTab === "reputation" ? "" : "hidden"}><ReputationSection /></div>
 
       </div>
     </div>
