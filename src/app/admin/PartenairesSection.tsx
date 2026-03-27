@@ -6,11 +6,17 @@ import type { Partenaire, Reversement } from "@/lib/supabase";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Building2, Phone, Mail, MapPin, Star, Edit2, X, Check,
-  TrendingUp, Wallet, ArrowDownCircle, AlertTriangle,
+  TrendingUp, Wallet, ArrowDownCircle, AlertTriangle, Plus,
 } from "lucide-react";
 import toast from "react-hot-toast";
 
 const fmt = (n: number) => `${Number(n).toLocaleString("fr-FR")} FDJ`;
+
+const ALL_SITES = [
+  "Hougeif", "Loubatanleh", "Sables Blancs", "Ditilou", "Godoria",
+  "Lac Assal", "Lac Abbé", "Requin-Baleine", "Goubet", "Bankoualeh",
+  "Allos", "Obock", "Forêt du Day", "Abourma", "Moucha",
+];
 
 const SITE_COLORS: Record<string, string> = {
   Hougeif:          "#408398",
@@ -50,6 +56,12 @@ export default function PartenairesSection() {
   const [editing, setEditing] = useState<Partenaire | null>(null);
   const [selected, setSelected] = useState<Partenaire | null>(null);
   const [form, setForm] = useState<Partial<Partenaire>>({});
+  const [showCreate, setShowCreate] = useState(false);
+  const [createForm, setCreateForm] = useState({
+    nom: "", contact: "", telephone: "", email: "",
+    localisation: "", commission_defaut: 0, notes: "",
+    note_performance: 0, sites: [] as string[],
+  });
 
   useEffect(() => { loadData(); }, []);
 
@@ -79,6 +91,7 @@ export default function PartenairesSection() {
       commission_defaut: form.commission_defaut,
       notes: form.notes,
       note_performance: form.note_performance,
+      sites: form.sites || [],
     }).eq("id", editing.id);
     if (error) { toast.error("Erreur lors de la sauvegarde"); return; }
     toast.success("Partenaire mis à jour ✓");
@@ -87,14 +100,35 @@ export default function PartenairesSection() {
     loadData();
   };
 
-  const getStats = (nom: string) => {
-    const rs = reversements.filter(r => r.site_nom === nom);
+  const getStats = (p: Partenaire) => {
+    const sitesPartenaire = p.sites?.length > 0 ? p.sites : [p.nom];
+    const rs = reversements.filter(r => sitesPartenaire.includes(r.site_nom));
     const totalEncaisse = rs.reduce((s, r) => s + r.total_client, 0);
-    const totalReverser = rs.reduce((s, r) => s + r.marge, 0); // what partner receives
-    const commissionVV = rs.reduce((s, r) => s + r.montant_reverser, 0); // VV commission
-    const aReverser = rs.filter(r => r.statut === "à reverser").reduce((s, r) => s + r.marge, 0); // pending to partner
+    const totalReverser = rs.reduce((s, r) => s + r.marge, 0);
+    const commissionVV = rs.reduce((s, r) => s + r.montant_reverser, 0);
+    const aReverser = rs.filter(r => r.statut === "à reverser").reduce((s, r) => s + r.marge, 0);
     const voyages = rs.length;
     return { totalEncaisse, totalReverser, commissionVV, aReverser, voyages, rs };
+  };
+
+  const saveCreate = async () => {
+    if (!createForm.nom.trim()) { toast.error("Le nom est requis"); return; }
+    const { error } = await supabase.from("partenaires").insert({
+      nom: createForm.nom.trim(),
+      contact: createForm.contact,
+      telephone: createForm.telephone,
+      email: createForm.email,
+      localisation: createForm.localisation,
+      commission_defaut: createForm.commission_defaut,
+      notes: createForm.notes,
+      note_performance: createForm.note_performance,
+      sites: createForm.sites,
+    });
+    if (error) { toast.error("Erreur : " + error.message); return; }
+    toast.success("Partenaire créé ✓");
+    setShowCreate(false);
+    setCreateForm({ nom: "", contact: "", telephone: "", email: "", localisation: "", commission_defaut: 0, notes: "", note_performance: 0, sites: [] });
+    loadData();
   };
 
   if (loading) return (
@@ -108,10 +142,16 @@ export default function PartenairesSection() {
 
       {/* Left — partner list */}
       <div className={`flex flex-col gap-4 transition-all ${selected ? "w-64 shrink-0" : "flex-1"}`}>
-        <h2 className="text-sm font-semibold text-gray-400 uppercase tracking-widest">Sites partenaires</h2>
+        <div className="flex items-center justify-between">
+          <h2 className="text-sm font-semibold text-gray-400 uppercase tracking-widest">Sites partenaires</h2>
+          <button onClick={() => setShowCreate(true)}
+            className="flex items-center gap-1.5 px-3 py-1.5 bg-[#0e2d38] text-white rounded-xl text-xs font-semibold hover:bg-[#1a3f50] transition-colors">
+            <Plus size={12} /> Nouveau partenaire
+          </button>
+        </div>
 
         {partenaires.map((p, i) => {
-          const stats = getStats(p.nom);
+          const stats = getStats(p);
           const color = SITE_COLORS[p.nom] || "#408398";
           const isSelected = selected?.id === p.id;
 
@@ -166,6 +206,14 @@ export default function PartenairesSection() {
               <div className="mt-2 text-[10px] text-gray-400">
                 Commission par défaut : <span className="font-bold text-gray-600">{p.commission_defaut}%</span>
               </div>
+              {/* Sites */}
+              {p.sites?.length > 0 && (
+                <div className="mt-2 flex flex-wrap gap-1">
+                  {p.sites.map(s => (
+                    <span key={s} className="text-[9px] font-semibold px-1.5 py-0.5 rounded-md bg-gray-100 text-gray-500">{s}</span>
+                  ))}
+                </div>
+              )}
             </motion.div>
           );
         })}
@@ -179,7 +227,7 @@ export default function PartenairesSection() {
 
             {/* Detail header */}
             {(() => {
-              const stats = getStats(selected.nom);
+              const stats = getStats(selected);
               const color = SITE_COLORS[selected.nom] || "#408398";
               return (
                 <>
@@ -313,6 +361,95 @@ export default function PartenairesSection() {
         )}
       </AnimatePresence>
 
+      {/* Create modal */}
+      <AnimatePresence>
+        {showCreate && (
+          <>
+            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+              className="fixed inset-0 bg-black/40 z-[70] backdrop-blur-sm" onClick={() => setShowCreate(false)} />
+            <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 20 }}
+              className="fixed inset-x-4 top-1/2 -translate-y-1/2 z-[71] bg-white rounded-2xl shadow-2xl max-w-md mx-auto overflow-hidden"
+              onClick={e => e.stopPropagation()}>
+
+              <div className="px-5 py-4 border-b border-gray-100 flex items-center justify-between">
+                <h3 className="text-sm font-bold text-gray-900">Nouveau partenaire</h3>
+                <button onClick={() => setShowCreate(false)} className="p-1.5 hover:bg-gray-100 rounded-xl transition-colors">
+                  <X size={15} className="text-gray-400" />
+                </button>
+              </div>
+
+              <div className="p-5 space-y-3 max-h-[70vh] overflow-y-auto">
+                <div>
+                  <label className="block text-[10px] font-bold uppercase tracking-wider text-gray-400 mb-1.5">Nom du partenaire *</label>
+                  <input type="text" value={createForm.nom} onChange={e => setCreateForm({ ...createForm, nom: e.target.value })}
+                    placeholder="Ex: Hôtel Lac Abbé"
+                    className="w-full px-3.5 py-2.5 border border-gray-200 rounded-xl text-sm text-gray-900 focus:outline-none focus:border-[#408398]" />
+                </div>
+
+                {[
+                  { label: "Personne de contact", field: "contact" as const, placeholder: "Nom du responsable" },
+                  { label: "Téléphone", field: "telephone" as const, placeholder: "+253 77 XX XX XX" },
+                  { label: "Email", field: "email" as const, placeholder: "contact@site.dj" },
+                  { label: "Localisation", field: "localisation" as const, placeholder: "Région / ville" },
+                ].map(({ label, field, placeholder }) => (
+                  <div key={field}>
+                    <label className="block text-[10px] font-bold uppercase tracking-wider text-gray-400 mb-1.5">{label}</label>
+                    <input type="text" value={createForm[field]} placeholder={placeholder}
+                      onChange={e => setCreateForm({ ...createForm, [field]: e.target.value })}
+                      className="w-full px-3.5 py-2.5 border border-gray-200 rounded-xl text-sm text-gray-900 focus:outline-none focus:border-[#408398]" />
+                  </div>
+                ))}
+
+                <div>
+                  <label className="block text-[10px] font-bold uppercase tracking-wider text-gray-400 mb-1.5">Commission par défaut (%)</label>
+                  <input type="number" min="0" max="100" value={createForm.commission_defaut}
+                    onChange={e => setCreateForm({ ...createForm, commission_defaut: parseFloat(e.target.value) || 0 })}
+                    className="w-full px-3.5 py-2.5 border border-gray-200 rounded-xl text-sm text-gray-900 focus:outline-none focus:border-[#408398]" />
+                </div>
+
+                {/* Sites */}
+                <div>
+                  <label className="block text-[10px] font-bold uppercase tracking-wider text-gray-400 mb-2">Sites assignés</label>
+                  <div className="grid grid-cols-2 gap-1.5 max-h-40 overflow-y-auto border border-gray-200 rounded-xl p-3">
+                    {ALL_SITES.map(site => {
+                      const checked = createForm.sites.includes(site);
+                      return (
+                        <label key={site} className="flex items-center gap-2 cursor-pointer group">
+                          <input type="checkbox" checked={checked}
+                            onChange={() => setCreateForm({
+                              ...createForm,
+                              sites: checked ? createForm.sites.filter(s => s !== site) : [...createForm.sites, site],
+                            })}
+                            className="w-3.5 h-3.5 accent-[#408398]" />
+                          <span className="text-xs text-gray-700 group-hover:text-gray-900">{site}</span>
+                        </label>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-[10px] font-bold uppercase tracking-wider text-gray-400 mb-1.5">Note de performance</label>
+                  <StarRating value={createForm.note_performance} onChange={v => setCreateForm({ ...createForm, note_performance: v })} />
+                </div>
+
+                <div>
+                  <label className="block text-[10px] font-bold uppercase tracking-wider text-gray-400 mb-1.5">Notes internes</label>
+                  <textarea value={createForm.notes} onChange={e => setCreateForm({ ...createForm, notes: e.target.value })} rows={3}
+                    placeholder="Conditions particulières, remarques..."
+                    className="w-full px-3.5 py-2.5 border border-gray-200 rounded-xl text-sm text-gray-900 focus:outline-none focus:border-[#408398] resize-none" />
+                </div>
+
+                <button onClick={saveCreate}
+                  className="w-full py-3 bg-[#0e2d38] text-white rounded-xl text-sm font-semibold hover:bg-[#1a3f50] transition-colors flex items-center justify-center gap-2">
+                  <Check size={15} /> Créer le partenaire
+                </button>
+              </div>
+            </motion.div>
+          </>
+        )}
+      </AnimatePresence>
+
       {/* Edit modal */}
       <AnimatePresence>
         {editing && (
@@ -350,6 +487,27 @@ export default function PartenairesSection() {
                   <input type="number" min="0" max="100" value={form.commission_defaut || 0}
                     onChange={e => setForm({ ...form, commission_defaut: parseFloat(e.target.value) })}
                     className="w-full px-3.5 py-2.5 border border-gray-200 rounded-xl text-sm text-gray-900 focus:outline-none focus:border-[#408398]" />
+                </div>
+
+                {/* Sites */}
+                <div>
+                  <label className="block text-[10px] font-bold uppercase tracking-wider text-gray-400 mb-2">Sites assignés</label>
+                  <div className="grid grid-cols-2 gap-1.5 max-h-40 overflow-y-auto border border-gray-200 rounded-xl p-3">
+                    {ALL_SITES.map(site => {
+                      const checked = (form.sites || []).includes(site);
+                      return (
+                        <label key={site} className="flex items-center gap-2 cursor-pointer group">
+                          <input type="checkbox" checked={checked}
+                            onChange={() => {
+                              const current = form.sites || [];
+                              setForm({ ...form, sites: checked ? current.filter(s => s !== site) : [...current, site] });
+                            }}
+                            className="w-3.5 h-3.5 accent-[#408398]" />
+                          <span className="text-xs text-gray-700 group-hover:text-gray-900">{site}</span>
+                        </label>
+                      );
+                    })}
+                  </div>
                 </div>
 
                 <div>

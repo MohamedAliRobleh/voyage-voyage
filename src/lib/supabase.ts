@@ -42,6 +42,7 @@ export type Partenaire = {
   commission_defaut: number;
   notes: string;
   note_performance: number;
+  sites: string[];
   created_at: string;
 };
 

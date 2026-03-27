@@ -47,15 +47,19 @@ export default function ReversementsSection() {
     setLoading(false);
   };
 
+  const findPartenaireBySite = (site: string) =>
+    partenaires.find(p =>
+      (p.sites?.length > 0 ? p.sites : [p.nom]).some(s => s.toLowerCase() === site.toLowerCase())
+    );
+
   const applyCommissionPartenaire = (site: string) => {
-    const p = partenaires.find(p => p.nom.toLowerCase() === site.toLowerCase());
+    const p = findPartenaireBySite(site);
     if (p && p.commission_defaut) {
       setUnite("%");
       setValeur(String(p.commission_defaut));
     } else {
       setValeur("");
     }
-    return p;
   };
 
   const detectSite = (facture: Facture): string => {
@@ -69,7 +73,7 @@ export default function ReversementsSection() {
     setModal({ facture });
     setSiteNom(site);
     setNotesR("");
-    const p = partenaires.find(p => p.nom.toLowerCase() === site.toLowerCase());
+    const p = findPartenaireBySite(site);
     if (p && p.commission_defaut) {
       setUnite("%");
       setValeur(String(p.commission_defaut));
@@ -311,9 +315,9 @@ export default function ReversementsSection() {
                 <div>
                   <div className="flex items-center justify-between mb-1.5">
                     <label className="block text-[10px] font-bold uppercase tracking-wider text-gray-400">Commission Voyage Voyage (agence)</label>
-                    {partenaires.find(p => p.nom.toLowerCase() === siteNom.toLowerCase())?.commission_defaut ? (
+                    {findPartenaireBySite(siteNom)?.commission_defaut ? (
                       <span className="text-[10px] text-[#408398] font-semibold bg-[#408398]/10 px-2 py-0.5 rounded-lg">
-                        Défaut partenaire : {partenaires.find(p => p.nom.toLowerCase() === siteNom.toLowerCase())?.commission_defaut}%
+                        Défaut partenaire : {findPartenaireBySite(siteNom)?.commission_defaut}%
                       </span>
                     ) : null}
                   </div>
