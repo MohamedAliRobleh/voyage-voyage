@@ -1,9 +1,10 @@
 "use client";
 
 import { useState } from "react";
-import { X, Plus } from "lucide-react";
+import { X, Plus, ChevronDown } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { catalog } from "@/lib/catalog";
+import type { CatalogFormule } from "@/lib/catalog";
 import type { LigneFacture } from "@/lib/supabase";
 
 interface Props {
@@ -13,11 +14,28 @@ interface Props {
 
 const fmt = (n: number) => `${Number(n).toLocaleString("fr-FR")} FDJ`;
 
+const emptyCustom = (): CatalogFormule => ({
+  id: `custom-${Date.now()}`,
+  label: "",
+  description: "",
+  type: "par_personne",
+  prixAdulte: 0,
+  prixEnfant: undefined,
+  prixFixe: undefined,
+  noteFixe: "",
+});
+
 export default function CatalogModal({ onAdd, onClose }: Props) {
   const [siteId, setSiteId] = useState(catalog[0].id);
   const [qty, setQty] = useState<Record<string, { adultes: number; enfants: number; fixe: number }>>({});
 
+  // Custom formules per site (temporary, in-session)
+  const [customFormules, setCustomFormules] = useState<Record<string, CatalogFormule[]>>({});
+  const [showCustomForm, setShowCustomForm] = useState(false);
+  const [customDraft, setCustomDraft] = useState<CatalogFormule>(emptyCustom());
+
   const site = catalog.find(s => s.id === siteId)!;
+  const allFormules = [...site.formules, ...(customFormules[siteId] ?? [])];
 
   const getQty = (id: string) => qty[id] ?? { adultes: 1, enfants: 0, fixe: 1 };
 
@@ -26,14 +44,14 @@ export default function CatalogModal({ onAdd, onClose }: Props) {
   };
 
   const handleAdd = (formulId: string) => {
-    const formule = site.formules.find(f => f.id === formulId)!;
+    const formule = allFormules.find(f => f.id === formulId)!;
     const q = getQty(formulId);
     const lignes: LigneFacture[] = [];
 
     if (formule.type === "fixe") {
       if (q.fixe > 0) {
         lignes.push({
-          description: `${site.nom} — ${formule.label} (${formule.description})`,
+          description: `${site.nom} — ${formule.label}${formule.description ? ` (${formule.description})` : ""}`,
           quantite: q.fixe,
           prix_unitaire: formule.prixFixe!,
           total: q.fixe * formule.prixFixe!,
@@ -42,7 +60,7 @@ export default function CatalogModal({ onAdd, onClose }: Props) {
     } else {
       if (q.adultes > 0) {
         lignes.push({
-          description: `${site.nom} — ${formule.label} · Adulte (${formule.description})`,
+          description: `${site.nom} — ${formule.label} · Adulte${formule.description ? ` (${formule.description})` : ""}`,
           quantite: q.adultes,
           prix_unitaire: formule.prixAdulte!,
           total: q.adultes * formule.prixAdulte!,
@@ -50,7 +68,7 @@ export default function CatalogModal({ onAdd, onClose }: Props) {
       }
       if (q.enfants > 0) {
         lignes.push({
-          description: `${site.nom} — ${formule.label} · Enfant ${formule.ageEnfant ? `(${formule.ageEnfant})` : ""} (${formule.description})`,
+          description: `${site.nom} — ${formule.label} · Enfant${formule.ageEnfant ? ` (${formule.ageEnfant})` : ""}${formule.description ? ` (${formule.description})` : ""}`,
           quantite: q.enfants,
           prix_unitaire: formule.prixEnfant!,
           total: q.enfants * formule.prixEnfant!,
@@ -60,8 +78,24 @@ export default function CatalogModal({ onAdd, onClose }: Props) {
 
     if (lignes.length === 0) return;
     onAdd(lignes);
-    // Reset qty for this formule
     setQty(q => ({ ...q, [formulId]: { adultes: 1, enfants: 0, fixe: 1 } }));
+  };
+
+  const handleSaveCustom = () => {
+    if (!customDraft.label) return;
+    if (customDraft.type === "fixe" && !customDraft.prixFixe) return;
+    if (customDraft.type === "par_personne" && !customDraft.prixAdulte) return;
+
+    const newFormule: CatalogFormule = {
+      ...customDraft,
+      id: `custom-${siteId}-${Date.now()}`,
+    };
+    setCustomFormules(prev => ({
+      ...prev,
+      [siteId]: [...(prev[siteId] ?? []), newFormule],
+    }));
+    setShowCustomForm(false);
+    setCustomDraft(emptyCustom());
   };
 
   return (
@@ -98,7 +132,7 @@ export default function CatalogModal({ onAdd, onClose }: Props) {
           {catalog.map(s => (
             <button
               key={s.id}
-              onClick={() => setSiteId(s.id)}
+              onClick={() => { setSiteId(s.id); setShowCustomForm(false); }}
               className={`flex items-center gap-1.5 px-3.5 py-2 rounded-t-xl text-xs font-semibold whitespace-nowrap transition-all border-b-2 ${
                 siteId === s.id
                   ? "text-gray-900 border-[#408398] bg-gray-50"
@@ -122,30 +156,34 @@ export default function CatalogModal({ onAdd, onClose }: Props) {
               transition={{ duration: 0.15 }}
               className="space-y-3"
             >
-              {site.formules.map(formule => {
+              {allFormules.map(formule => {
                 const q = getQty(formule.id);
+                const isCustom = formule.id.startsWith("custom-");
                 return (
                   <div key={formule.id} className="border border-gray-200 rounded-2xl overflow-hidden bg-white hover:border-gray-300 transition-colors">
                     {/* Formule header */}
-                    <div className="px-4 py-3 flex items-start justify-between gap-3" style={{ borderLeft: `3px solid ${site.couleur}` }}>
+                    <div className="px-4 py-3 flex items-start justify-between gap-3" style={{ borderLeft: `3px solid ${isCustom ? "#f59e0b" : site.couleur}` }}>
                       <div className="flex-1 min-w-0">
-                        <p className="text-sm font-bold text-gray-900">{formule.label}</p>
-                        <p className="text-[11px] text-gray-400 mt-0.5">{formule.description}</p>
+                        <div className="flex items-center gap-2">
+                          <p className="text-sm font-bold text-gray-900">{formule.label}</p>
+                          {isCustom && <span className="text-[10px] bg-amber-100 text-amber-700 px-1.5 py-0.5 rounded-full font-semibold">Personnalisée</span>}
+                        </div>
+                        {formule.description && <p className="text-[11px] text-gray-400 mt-0.5">{formule.description}</p>}
                         {formule.type === "par_personne" && (
                           <div className="flex gap-3 mt-1.5">
                             <span className="text-xs font-semibold text-gray-700">
-                              Adulte : <span style={{ color: site.couleur }}>{fmt(formule.prixAdulte!)}</span>
+                              Adulte : <span style={{ color: isCustom ? "#f59e0b" : site.couleur }}>{fmt(formule.prixAdulte!)}</span>
                             </span>
                             {formule.prixEnfant && (
                               <span className="text-xs font-semibold text-gray-700">
-                                Enfant{formule.ageEnfant ? ` (${formule.ageEnfant})` : ""} : <span style={{ color: site.couleur }}>{fmt(formule.prixEnfant)}</span>
+                                Enfant{formule.ageEnfant ? ` (${formule.ageEnfant})` : ""} : <span style={{ color: isCustom ? "#f59e0b" : site.couleur }}>{fmt(formule.prixEnfant)}</span>
                               </span>
                             )}
                           </div>
                         )}
                         {formule.type === "fixe" && (
-                          <p className="text-xs font-semibold mt-1" style={{ color: site.couleur }}>
-                            {fmt(formule.prixFixe!)} <span className="text-gray-400 font-normal">/ {formule.noteFixe}</span>
+                          <p className="text-xs font-semibold mt-1" style={{ color: isCustom ? "#f59e0b" : site.couleur }}>
+                            {fmt(formule.prixFixe!)} <span className="text-gray-400 font-normal">{formule.noteFixe ? `/ ${formule.noteFixe}` : ""}</span>
                           </p>
                         )}
                       </div>
@@ -203,7 +241,7 @@ export default function CatalogModal({ onAdd, onClose }: Props) {
                         type="button"
                         onClick={() => handleAdd(formule.id)}
                         className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl text-xs font-bold text-white transition-all hover:-translate-y-0.5"
-                        style={{ background: site.couleur }}
+                        style={{ background: isCustom ? "#f59e0b" : site.couleur }}
                       >
                         <Plus size={11} /> Ajouter
                       </button>
@@ -211,6 +249,147 @@ export default function CatalogModal({ onAdd, onClose }: Props) {
                   </div>
                 );
               })}
+
+              {/* Bouton + Ajouter une formule */}
+              <div className="border-2 border-dashed border-gray-200 rounded-2xl overflow-hidden">
+                <button
+                  type="button"
+                  onClick={() => setShowCustomForm(v => !v)}
+                  className="w-full px-4 py-3 flex items-center justify-between text-sm font-semibold text-gray-400 hover:text-gray-600 hover:bg-gray-50 transition-colors"
+                >
+                  <span className="flex items-center gap-2">
+                    <Plus size={15} />
+                    Ajouter une formule personnalisée
+                  </span>
+                  <ChevronDown size={14} className={`transition-transform ${showCustomForm ? "rotate-180" : ""}`} />
+                </button>
+
+                <AnimatePresence>
+                  {showCustomForm && (
+                    <motion.div
+                      initial={{ height: 0, opacity: 0 }}
+                      animate={{ height: "auto", opacity: 1 }}
+                      exit={{ height: 0, opacity: 0 }}
+                      transition={{ duration: 0.2 }}
+                      className="overflow-hidden"
+                    >
+                      <div className="px-4 pb-4 space-y-3 bg-amber-50 border-t border-amber-100">
+                        <div className="grid grid-cols-2 gap-3 pt-3">
+                          <div className="col-span-2">
+                            <label className="text-[11px] font-semibold text-gray-500 uppercase tracking-wide">Nom de la formule *</label>
+                            <input
+                              type="text"
+                              value={customDraft.label}
+                              onChange={e => setCustomDraft(d => ({ ...d, label: e.target.value }))}
+                              placeholder="Ex: Formule spéciale weekend"
+                              className="mt-1 w-full px-3 py-2 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-amber-300"
+                            />
+                          </div>
+                          <div className="col-span-2">
+                            <label className="text-[11px] font-semibold text-gray-500 uppercase tracking-wide">Description</label>
+                            <input
+                              type="text"
+                              value={customDraft.description}
+                              onChange={e => setCustomDraft(d => ({ ...d, description: e.target.value }))}
+                              placeholder="Ex: Dîner + Petit-déjeuner"
+                              className="mt-1 w-full px-3 py-2 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-amber-300"
+                            />
+                          </div>
+                          <div className="col-span-2">
+                            <label className="text-[11px] font-semibold text-gray-500 uppercase tracking-wide">Type de tarif</label>
+                            <div className="flex gap-2 mt-1">
+                              <button
+                                type="button"
+                                onClick={() => setCustomDraft(d => ({ ...d, type: "par_personne" }))}
+                                className={`flex-1 py-2 rounded-xl text-xs font-bold border transition-colors ${customDraft.type === "par_personne" ? "bg-amber-500 text-white border-amber-500" : "bg-white text-gray-500 border-gray-200"}`}
+                              >
+                                Par personne
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => setCustomDraft(d => ({ ...d, type: "fixe" }))}
+                                className={`flex-1 py-2 rounded-xl text-xs font-bold border transition-colors ${customDraft.type === "fixe" ? "bg-amber-500 text-white border-amber-500" : "bg-white text-gray-500 border-gray-200"}`}
+                              >
+                                Prix fixe
+                              </button>
+                            </div>
+                          </div>
+
+                          {customDraft.type === "par_personne" ? (
+                            <>
+                              <div>
+                                <label className="text-[11px] font-semibold text-gray-500 uppercase tracking-wide">Prix adulte (FDJ) *</label>
+                                <input
+                                  type="number"
+                                  min={0}
+                                  value={customDraft.prixAdulte || ""}
+                                  onChange={e => setCustomDraft(d => ({ ...d, prixAdulte: Number(e.target.value) }))}
+                                  placeholder="0"
+                                  className="mt-1 w-full px-3 py-2 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-amber-300"
+                                />
+                              </div>
+                              <div>
+                                <label className="text-[11px] font-semibold text-gray-500 uppercase tracking-wide">Prix enfant (FDJ)</label>
+                                <input
+                                  type="number"
+                                  min={0}
+                                  value={customDraft.prixEnfant || ""}
+                                  onChange={e => setCustomDraft(d => ({ ...d, prixEnfant: e.target.value ? Number(e.target.value) : undefined }))}
+                                  placeholder="Optionnel"
+                                  className="mt-1 w-full px-3 py-2 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-amber-300"
+                                />
+                              </div>
+                            </>
+                          ) : (
+                            <>
+                              <div>
+                                <label className="text-[11px] font-semibold text-gray-500 uppercase tracking-wide">Prix (FDJ) *</label>
+                                <input
+                                  type="number"
+                                  min={0}
+                                  value={customDraft.prixFixe || ""}
+                                  onChange={e => setCustomDraft(d => ({ ...d, prixFixe: Number(e.target.value) }))}
+                                  placeholder="0"
+                                  className="mt-1 w-full px-3 py-2 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-amber-300"
+                                />
+                              </div>
+                              <div>
+                                <label className="text-[11px] font-semibold text-gray-500 uppercase tracking-wide">Unité</label>
+                                <input
+                                  type="text"
+                                  value={customDraft.noteFixe || ""}
+                                  onChange={e => setCustomDraft(d => ({ ...d, noteFixe: e.target.value }))}
+                                  placeholder="ex: par nuit"
+                                  className="mt-1 w-full px-3 py-2 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-amber-300"
+                                />
+                              </div>
+                            </>
+                          )}
+                        </div>
+
+                        <div className="flex gap-2 pt-1">
+                          <button
+                            type="button"
+                            onClick={() => { setShowCustomForm(false); setCustomDraft(emptyCustom()); }}
+                            className="flex-1 py-2 rounded-xl text-xs font-bold text-gray-500 bg-white border border-gray-200 hover:bg-gray-50 transition-colors"
+                          >
+                            Annuler
+                          </button>
+                          <button
+                            type="button"
+                            onClick={handleSaveCustom}
+                            disabled={!customDraft.label || (customDraft.type === "fixe" ? !customDraft.prixFixe : !customDraft.prixAdulte)}
+                            className="flex-1 py-2 rounded-xl text-xs font-bold text-white bg-amber-500 hover:bg-amber-600 transition-colors disabled:opacity-40"
+                          >
+                            Créer la formule
+                          </button>
+                        </div>
+                      </div>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </div>
+
             </motion.div>
           </AnimatePresence>
         </div>
