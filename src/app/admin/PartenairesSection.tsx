@@ -13,11 +13,21 @@ import toast from "react-hot-toast";
 const fmt = (n: number) => `${Number(n).toLocaleString("fr-FR")} FDJ`;
 
 const SITE_COLORS: Record<string, string> = {
-  Hougeif: "#408398",
-  Loubatanleh: "#059669",
-  "Sables Blancs": "#16a34a",
-  Ditilou: "#7c3aed",
-  Godoria: "#0891b2",
+  Hougeif:          "#408398",
+  Loubatanleh:      "#059669",
+  "Sables Blancs":  "#16a34a",
+  Ditilou:          "#7c3aed",
+  Godoria:          "#0891b2",
+  "Lac Assal":      "#0284c7",
+  "Lac Abbé":       "#ea580c",
+  "Requin-Baleine": "#2563eb",
+  Goubet:           "#dc2626",
+  Bankoualeh:       "#65a30d",
+  Allos:            "#ca8a04",
+  Obock:            "#4338ca",
+  "Forêt du Day":   "#0d9488",
+  Abourma:          "#d97706",
+  Moucha:           "#8b5cf6",
 };
 
 function StarRating({ value, onChange }: { value: number; onChange?: (v: number) => void }) {

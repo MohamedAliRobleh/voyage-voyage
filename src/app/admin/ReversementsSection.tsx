@@ -9,7 +9,11 @@ import toast from "react-hot-toast";
 
 const fmt = (n: number) => `${Number(n).toLocaleString("fr-FR")} FDJ`;
 
-const SITES = ["Hougeif", "Loubatanleh", "Sables Blancs", "Ditilou", "Godoria", "Autre"];
+const SITES = [
+  "Hougeif", "Loubatanleh", "Sables Blancs", "Ditilou", "Godoria",
+  "Lac Assal", "Lac Abbé", "Requin-Baleine", "Goubet", "Bankoualeh",
+  "Allos", "Obock", "Forêt du Day", "Abourma", "Moucha", "Autre",
+];
 
 interface ClotureModal {
   facture: Facture;

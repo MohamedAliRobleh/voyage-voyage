@@ -36,7 +36,11 @@ const SEGMENT_CONFIG: Record<Segment, { label: string; color: string; bg: string
   Inactif:  { label: "Inactif",  color: "text-gray-400",    bg: "bg-gray-100",    icon: <Clock size={11} />,     desc: ">6 mois sans voyage" },
 };
 
-const SITES = ["Hougeif", "Loubatanleh", "Sables Blancs", "Ditilou", "Godoria"];
+const SITES = [
+  "Hougeif", "Loubatanleh", "Sables Blancs", "Ditilou", "Godoria",
+  "Lac Assal", "Lac Abbé", "Requin-Baleine", "Goubet", "Bankoualeh",
+  "Allos", "Obock", "Forêt du Day", "Abourma", "Moucha",
+];
 
 function detectSite(facture: Facture): string {
   const desc = facture.lignes.map(l => l.description).join(" ");

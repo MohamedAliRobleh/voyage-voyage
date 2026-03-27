@@ -10,24 +10,48 @@ import {
 
 // ─── Constants ───────────────────────────────────────────────────────────────
 
-const SITES = ["Hougeif", "Loubatanleh", "Sables Blancs", "Ditilou", "Godoria"];
+const SITES = [
+  "Hougeif", "Loubatanleh", "Sables Blancs", "Ditilou", "Godoria",
+  "Lac Assal", "Lac Abbé", "Requin-Baleine", "Goubet", "Bankoualeh",
+  "Allos", "Obock", "Forêt du Day", "Abourma", "Moucha",
+];
 
 const SITE_COLORS: Record<string, string> = {
-  Hougeif:         "bg-[#408398]",
-  Loubatanleh:     "bg-emerald-500",
-  "Sables Blancs": "bg-green-500",
-  Ditilou:         "bg-purple-500",
-  Godoria:         "bg-cyan-500",
-  Autre:           "bg-gray-400",
+  Hougeif:          "bg-[#408398]",
+  Loubatanleh:      "bg-emerald-500",
+  "Sables Blancs":  "bg-green-500",
+  Ditilou:          "bg-purple-500",
+  Godoria:          "bg-cyan-500",
+  "Lac Assal":      "bg-sky-500",
+  "Lac Abbé":       "bg-orange-500",
+  "Requin-Baleine": "bg-blue-500",
+  Goubet:           "bg-red-500",
+  Bankoualeh:       "bg-lime-500",
+  Allos:            "bg-yellow-500",
+  Obock:            "bg-indigo-500",
+  "Forêt du Day":   "bg-teal-500",
+  Abourma:          "bg-amber-500",
+  Moucha:           "bg-violet-500",
+  Autre:            "bg-gray-400",
 };
 
 const SITE_LIGHT: Record<string, string> = {
-  Hougeif:         "bg-[#408398]/15 text-[#408398]",
-  Loubatanleh:     "bg-emerald-100 text-emerald-700",
-  "Sables Blancs": "bg-green-100 text-green-700",
-  Ditilou:         "bg-purple-100 text-purple-700",
-  Godoria:         "bg-cyan-100 text-cyan-700",
-  Autre:           "bg-gray-100 text-gray-500",
+  Hougeif:          "bg-[#408398]/15 text-[#408398]",
+  Loubatanleh:      "bg-emerald-100 text-emerald-700",
+  "Sables Blancs":  "bg-green-100 text-green-700",
+  Ditilou:          "bg-purple-100 text-purple-700",
+  Godoria:          "bg-cyan-100 text-cyan-700",
+  "Lac Assal":      "bg-sky-100 text-sky-700",
+  "Lac Abbé":       "bg-orange-100 text-orange-700",
+  "Requin-Baleine": "bg-blue-100 text-blue-700",
+  Goubet:           "bg-red-100 text-red-700",
+  Bankoualeh:       "bg-lime-100 text-lime-700",
+  Allos:            "bg-yellow-100 text-yellow-700",
+  Obock:            "bg-indigo-100 text-indigo-700",
+  "Forêt du Day":   "bg-teal-100 text-teal-700",
+  Abourma:          "bg-amber-100 text-amber-700",
+  Moucha:           "bg-violet-100 text-violet-700",
+  Autre:            "bg-gray-100 text-gray-500",
 };
 
 const MONTH_LABELS = ["Jan", "Fév", "Mar", "Avr", "Mai", "Juin", "Juil", "Août", "Sep", "Oct", "Nov", "Déc"];

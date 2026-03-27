@@ -10,7 +10,11 @@ import {
 
 // ─── Constants ───────────────────────────────────────────────────────────────
 
-const SITES = ["Hougeif", "Loubatanleh", "Sables Blancs", "Ditilou", "Godoria"];
+const SITES = [
+  "Hougeif", "Loubatanleh", "Sables Blancs", "Ditilou", "Godoria",
+  "Lac Assal", "Lac Abbé", "Requin-Baleine", "Goubet", "Bankoualeh",
+  "Allos", "Obock", "Forêt du Day", "Abourma", "Moucha",
+];
 const MONTH_LABELS = ["Janvier", "Février", "Mars", "Avril", "Mai", "Juin", "Juillet", "Août", "Septembre", "Octobre", "Novembre", "Décembre"];
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────

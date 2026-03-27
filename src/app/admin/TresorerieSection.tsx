@@ -18,7 +18,11 @@ function parseDateStr(s: string): Date {
 const fmtDate = (d: string) => parseDateStr(d).toLocaleDateString("fr-FR", { day: "numeric", month: "short", year: "numeric" });
 const fmtMonth = (d: Date) => d.toLocaleDateString("fr-FR", { month: "short", year: "2-digit" });
 
-const SITES = ["Hougeif", "Loubatanleh", "Sables Blancs", "Ditilou", "Godoria"];
+const SITES = [
+  "Hougeif", "Loubatanleh", "Sables Blancs", "Ditilou", "Godoria",
+  "Lac Assal", "Lac Abbé", "Requin-Baleine", "Goubet", "Bankoualeh",
+  "Allos", "Obock", "Forêt du Day", "Abourma", "Moucha",
+];
 function detectSite(facture: Facture): string {
   const desc = facture.lignes.map(l => l.description).join(" ");
   return SITES.find(s => desc.toLowerCase().includes(s.toLowerCase())) || "Autre";
