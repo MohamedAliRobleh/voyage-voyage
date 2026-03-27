@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { supabase } from "@/lib/supabase";
 import type { Client, Facture, LigneFacture } from "@/lib/supabase";
-import { Plus, Trash2, X, FileText, Check, Send, Eye, TrendingUp, Clock, ArrowRight, BookOpen, ChevronRight } from "lucide-react";
+import { Plus, Trash2, X, FileText, Check, Send, Eye, TrendingUp, Clock, ArrowRight, BookOpen, ChevronRight, Settings } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import toast from "react-hot-toast";
 import DocumentPreview from "./DocumentPreview";
@@ -14,7 +14,17 @@ function localDateStr(d = new Date()) {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
 }
 
-const MODELE_STANDARD = `✅ INCLUS
+type PersoModel = { inclus: string[]; non_inclus: string[]; conditions: string };
+
+function buildPersoText(inclus: string[], non_inclus: string[], conditions: string): string {
+  const parts: string[] = [];
+  if (inclus.length > 0) parts.push("✅ INCLUS\n" + inclus.map(x => `• ${x}`).join("\n"));
+  if (non_inclus.length > 0) parts.push("❌ NON INCLUS\n" + non_inclus.map(x => `• ${x}`).join("\n"));
+  if (conditions.trim()) parts.push(conditions.trim());
+  return parts.join("\n\n");
+}
+
+const MODELE_STANDARD_DEFAULT = `✅ INCLUS
 • Hébergement selon formule choisie (sauf formule Journée uniquement)
 • Repas selon formule choisie
 
@@ -36,6 +46,31 @@ const MODELE_STANDARD = `✅ INCLUS
 💳 MODALITÉS DE PAIEMENT
 • Paiement en espèces uniquement (FDJ)
 • Totalité du montant requise 5 jours avant la sortie`;
+
+const PERSO_DEFAULT_INCLUS = [
+  "Hébergement selon formule choisie (sauf formule Journée uniquement)",
+  "Petit-déjeuner et dîner (déjeuner inclus selon formule choisie)",
+];
+const PERSO_DEFAULT_NON_INCLUS = [
+  "Boissons et dépenses personnelles",
+  "Visite Mangrove (Godoria uniquement — 2 000 FDJ/adulte · 1 000 FDJ/enfant)",
+  "Activités nautiques : snorkeling, plongée (Hougeif et Sables Blancs uniquement)",
+  "Assurance voyage",
+];
+const PERSO_DEFAULT_CONDITIONS = `💳 MODALITÉS DE PAIEMENT
+• Paiement en espèces uniquement (FDJ)
+• Acompte de 50% requis pour confirmer la réservation
+• Solde à régler avant le départ
+
+🚫 CONDITIONS D'ANNULATION
+• Annulation gratuite jusqu'à 72h avant le départ
+• Entre 72h et 24h avant le départ : 50% du montant retenu
+• Moins de 24h avant le départ : 100% du montant retenu
+
+📍 INFORMATIONS LOGISTIQUES
+• Rendez-vous : Gabode 5, Zone Stid — Djibouti-Ville
+• Heure de départ : 7h00 (sauf indication contraire)
+• À prévoir : chapeau, crème solaire, eau, chaussures adaptées`;
 
 const statutConfig = {
   brouillon:      { label: "Brouillon",      bg: "bg-gray-100",    text: "text-gray-500",    dot: "bg-gray-400" },
@@ -67,6 +102,17 @@ export default function FacturesSection() {
   const [filterType, setFilterType] = useState<"all" | "facture" | "devis">("all");
   const [showCatalog, setShowCatalog] = useState(false);
 
+  // Modèles de notes
+  const [modeles, setModeles] = useState({
+    standard: MODELE_STANDARD_DEFAULT,
+    personnalise: buildPersoText(PERSO_DEFAULT_INCLUS, PERSO_DEFAULT_NON_INCLUS, PERSO_DEFAULT_CONDITIONS),
+    personnaliseData: { inclus: PERSO_DEFAULT_INCLUS, non_inclus: PERSO_DEFAULT_NON_INCLUS, conditions: PERSO_DEFAULT_CONDITIONS } as PersoModel,
+  });
+  const [showModelEditor, setShowModelEditor] = useState(false);
+  const [editTab, setEditTab] = useState<"standard" | "personnalise">("standard");
+  const [editStandard, setEditStandard] = useState("");
+  const [editPerso, setEditPerso] = useState<PersoModel>({ inclus: [], non_inclus: [], conditions: "" });
+
   const [form, setForm] = useState({
     client_id: "",
     client_nom: "",
@@ -81,6 +127,7 @@ export default function FacturesSection() {
 
   useEffect(() => {
     loadData(true);
+    loadModeles();
   }, []);
 
   const loadData = async (initial = false) => {
@@ -92,6 +139,46 @@ export default function FacturesSection() {
     setFactures(f || []);
     setClients(c || []);
     if (initial) setLoading(false);
+  };
+
+  const loadModeles = async () => {
+    const { data } = await supabase.from("document_modeles").select("*");
+    if (!data || data.length === 0) return;
+    const std = data.find((d: { type: string; contenu: string }) => d.type === "standard");
+    const perso = data.find((d: { type: string; contenu: string }) => d.type === "personnalise");
+    setModeles(prev => {
+      const next = { ...prev };
+      if (std) next.standard = std.contenu;
+      if (perso) {
+        try {
+          const parsed: PersoModel = JSON.parse(perso.contenu);
+          next.personnaliseData = parsed;
+          next.personnalise = buildPersoText(parsed.inclus, parsed.non_inclus, parsed.conditions);
+        } catch {
+          next.personnalise = perso.contenu;
+        }
+      }
+      return next;
+    });
+  };
+
+  const openModelEditor = () => {
+    setEditStandard(modeles.standard);
+    setEditPerso({ ...modeles.personnaliseData });
+    setEditTab("standard");
+    setShowModelEditor(true);
+  };
+
+  const saveModeles = async () => {
+    const persoText = buildPersoText(editPerso.inclus, editPerso.non_inclus, editPerso.conditions);
+    const persoJson = JSON.stringify(editPerso);
+    await Promise.all([
+      supabase.from("document_modeles").upsert({ type: "standard", contenu: editStandard, updated_at: new Date().toISOString() }, { onConflict: "type" }),
+      supabase.from("document_modeles").upsert({ type: "personnalise", contenu: persoJson, updated_at: new Date().toISOString() }, { onConflict: "type" }),
+    ]);
+    setModeles({ standard: editStandard, personnalise: persoText, personnaliseData: editPerso });
+    setShowModelEditor(false);
+    toast.success("Modèles enregistrés ✓");
   };
 
   const openForm = (type: "facture" | "devis") => {
@@ -661,12 +748,21 @@ export default function FacturesSection() {
 
                   {/* Notes */}
                   <div>
-                    <div className="flex items-center justify-between mb-1.5">
+                    <div className="flex items-center justify-between mb-1.5 flex-wrap gap-1">
                       <label className="block text-[10px] font-bold uppercase tracking-wider text-gray-400">Notes / Conditions</label>
-                      <div className="flex gap-1.5">
-                        <button type="button" onClick={() => setForm({ ...form, notes: MODELE_STANDARD })}
+                      <div className="flex items-center gap-1.5 flex-wrap">
+                        <button type="button" onClick={() => setForm({ ...form, notes: modeles.standard })}
                           className="text-[10px] font-semibold text-[#408398] bg-[#408398]/10 hover:bg-[#408398]/20 px-2.5 py-1 rounded-lg transition-colors">
-                          Modèle standard
+                          Standard
+                        </button>
+                        <button type="button" onClick={() => setForm({ ...form, notes: modeles.personnalise })}
+                          className="text-[10px] font-semibold text-purple-600 bg-purple-50 hover:bg-purple-100 px-2.5 py-1 rounded-lg transition-colors">
+                          Personnalisé
+                        </button>
+                        <button type="button" onClick={openModelEditor}
+                          title="Modifier les modèles"
+                          className="p-1 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors">
+                          <Settings size={11} />
                         </button>
                         <button type="button" onClick={() => setForm({ ...form, notes: "" })}
                           className="text-[10px] font-semibold text-gray-400 bg-gray-100 hover:bg-gray-200 px-2.5 py-1 rounded-lg transition-colors">
@@ -676,7 +772,7 @@ export default function FacturesSection() {
                     </div>
                     <textarea value={form.notes} onChange={e => setForm({ ...form, notes: e.target.value })} rows={5}
                       className="w-full px-3.5 py-2.5 border border-gray-200 rounded-xl text-sm text-gray-900 focus:outline-none focus:border-[#408398] resize-none font-mono"
-                      placeholder="Laisser vide ou cliquer sur Modèle standard..." />
+                      placeholder="Laisser vide ou choisir un modèle..." />
                   </div>
 
                   <div className="flex gap-2.5 pt-1">
@@ -714,6 +810,138 @@ export default function FacturesSection() {
             }}
             onClose={() => setShowCatalog(false)}
           />
+        )}
+      </AnimatePresence>
+
+      {/* Model Editor Modal */}
+      <AnimatePresence>
+        {showModelEditor && (
+          <>
+            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+              className="fixed inset-0 bg-black/40 backdrop-blur-sm z-50" onClick={() => setShowModelEditor(false)} />
+            <motion.div initial={{ opacity: 0, y: 40 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 40 }}
+              className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-6">
+              <div className="bg-white rounded-t-3xl sm:rounded-2xl shadow-2xl w-full sm:max-w-2xl max-h-[92vh] overflow-y-auto">
+
+                {/* Header */}
+                <div className="sticky top-0 bg-white z-10 px-6 py-4 border-b border-gray-100 flex items-center justify-between rounded-t-3xl sm:rounded-t-2xl">
+                  <div className="flex items-center gap-3">
+                    <div className="w-8 h-8 rounded-xl bg-gray-100 flex items-center justify-center">
+                      <Settings size={14} className="text-gray-500" />
+                    </div>
+                    <div>
+                      <h3 className="text-sm font-bold text-gray-900">Modifier les modèles</h3>
+                      <p className="text-[10px] text-gray-400">Les modifications s&apos;appliquent immédiatement après enregistrement</p>
+                    </div>
+                  </div>
+                  <button onClick={() => setShowModelEditor(false)} className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-xl transition-colors">
+                    <X size={16} />
+                  </button>
+                </div>
+
+                {/* Tabs */}
+                <div className="px-6 pt-4 flex gap-1 bg-white border-b border-gray-100">
+                  {([["standard", "Modèle Standard"], ["personnalise", "Modèle Personnalisé"]] as const).map(([tab, label]) => (
+                    <button key={tab} onClick={() => setEditTab(tab)}
+                      className={`px-4 py-2 text-xs font-semibold rounded-t-lg transition-all border-b-2 ${editTab === tab ? (tab === "personnalise" ? "text-purple-600 border-purple-500 bg-purple-50/50" : "text-[#408398] border-[#408398] bg-[#408398]/5") : "text-gray-400 border-transparent hover:text-gray-600"}`}>
+                      {label}
+                    </button>
+                  ))}
+                </div>
+
+                <div className="px-6 py-5 space-y-4">
+                  {editTab === "standard" ? (
+                    <div>
+                      <p className="text-[10px] font-bold uppercase tracking-wider text-gray-400 mb-2">Contenu du modèle standard</p>
+                      <textarea value={editStandard} onChange={e => setEditStandard(e.target.value)} rows={14}
+                        className="w-full px-3.5 py-2.5 border border-gray-200 rounded-xl text-sm text-gray-900 focus:outline-none focus:border-[#408398] resize-none font-mono" />
+                      <button type="button" onClick={() => setEditStandard(MODELE_STANDARD_DEFAULT)}
+                        className="mt-2 text-[10px] text-gray-400 hover:text-gray-600 underline">
+                        Réinitialiser au contenu par défaut
+                      </button>
+                    </div>
+                  ) : (
+                    <div className="space-y-5">
+                      {/* INCLUS bullets */}
+                      <div>
+                        <p className="text-[10px] font-bold uppercase tracking-wider text-emerald-600 mb-2">✅ INCLUS</p>
+                        <div className="space-y-2">
+                          {editPerso.inclus.map((item, i) => (
+                            <div key={i} className="flex items-center gap-2">
+                              <span className="text-emerald-500 text-sm shrink-0">•</span>
+                              <input value={item} onChange={e => {
+                                const next = [...editPerso.inclus];
+                                next[i] = e.target.value;
+                                setEditPerso({ ...editPerso, inclus: next });
+                              }}
+                                className="flex-1 px-3 py-2 border border-gray-200 rounded-lg text-sm text-gray-900 focus:outline-none focus:border-emerald-400" />
+                              <button type="button" onClick={() => setEditPerso({ ...editPerso, inclus: editPerso.inclus.filter((_, idx) => idx !== i) })}
+                                className="p-1.5 text-gray-300 hover:text-red-400 transition-colors">
+                                <X size={13} />
+                              </button>
+                            </div>
+                          ))}
+                        </div>
+                        <button type="button" onClick={() => setEditPerso({ ...editPerso, inclus: [...editPerso.inclus, ""] })}
+                          className="mt-2 flex items-center gap-1 text-xs text-emerald-600 font-medium hover:underline">
+                          <Plus size={11} /> Ajouter un élément inclus
+                        </button>
+                      </div>
+
+                      {/* NON INCLUS bullets */}
+                      <div>
+                        <p className="text-[10px] font-bold uppercase tracking-wider text-red-500 mb-2">❌ NON INCLUS</p>
+                        <div className="space-y-2">
+                          {editPerso.non_inclus.map((item, i) => (
+                            <div key={i} className="flex items-center gap-2">
+                              <span className="text-red-400 text-sm shrink-0">•</span>
+                              <input value={item} onChange={e => {
+                                const next = [...editPerso.non_inclus];
+                                next[i] = e.target.value;
+                                setEditPerso({ ...editPerso, non_inclus: next });
+                              }}
+                                className="flex-1 px-3 py-2 border border-gray-200 rounded-lg text-sm text-gray-900 focus:outline-none focus:border-red-300" />
+                              <button type="button" onClick={() => setEditPerso({ ...editPerso, non_inclus: editPerso.non_inclus.filter((_, idx) => idx !== i) })}
+                                className="p-1.5 text-gray-300 hover:text-red-400 transition-colors">
+                                <X size={13} />
+                              </button>
+                            </div>
+                          ))}
+                        </div>
+                        <button type="button" onClick={() => setEditPerso({ ...editPerso, non_inclus: [...editPerso.non_inclus, ""] })}
+                          className="mt-2 flex items-center gap-1 text-xs text-red-500 font-medium hover:underline">
+                          <Plus size={11} /> Ajouter un élément non inclus
+                        </button>
+                      </div>
+
+                      {/* Conditions bloc */}
+                      <div>
+                        <p className="text-[10px] font-bold uppercase tracking-wider text-gray-400 mb-2">Conditions (paiement, annulation, logistique)</p>
+                        <textarea value={editPerso.conditions} onChange={e => setEditPerso({ ...editPerso, conditions: e.target.value })} rows={10}
+                          className="w-full px-3.5 py-2.5 border border-gray-200 rounded-xl text-sm text-gray-900 focus:outline-none focus:border-purple-400 resize-none font-mono" />
+                      </div>
+
+                      <button type="button" onClick={() => setEditPerso({ inclus: PERSO_DEFAULT_INCLUS, non_inclus: PERSO_DEFAULT_NON_INCLUS, conditions: PERSO_DEFAULT_CONDITIONS })}
+                        className="text-[10px] text-gray-400 hover:text-gray-600 underline">
+                        Réinitialiser au contenu par défaut
+                      </button>
+                    </div>
+                  )}
+
+                  <div className="flex gap-2.5 pt-2 border-t border-gray-100">
+                    <button type="button" onClick={() => setShowModelEditor(false)}
+                      className="flex-1 py-2.5 border border-gray-200 rounded-xl text-sm font-medium text-gray-600 hover:bg-gray-50 transition-colors">
+                      Annuler
+                    </button>
+                    <button type="button" onClick={saveModeles}
+                      className="flex-1 py-2.5 bg-[#0e2d38] text-white rounded-xl text-sm font-semibold hover:bg-[#1a3f50] transition-colors">
+                      Enregistrer les modèles
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </motion.div>
+          </>
         )}
       </AnimatePresence>
     </div>
