@@ -2,7 +2,7 @@
 
 import { useRef, useState } from "react";
 import type { Facture } from "@/lib/supabase";
-import { X, Printer, Send, Check } from "lucide-react";
+import { X, Printer, Send, Check, MessageCircle } from "lucide-react";
 import { motion } from "framer-motion";
 import toast from "react-hot-toast";
 
@@ -17,6 +17,7 @@ export default function DocumentPreview({ document: doc, onClose }: Props) {
   const printRef = useRef<HTMLDivElement>(null);
   const [sending, setSending] = useState(false);
   const [sent, setSent] = useState(false);
+  const [generatingPdf, setGeneratingPdf] = useState(false);
 
   const handleSendEmail = async () => {
     if (!doc.client_email) {
@@ -46,6 +47,53 @@ export default function DocumentPreview({ document: doc, onClose }: Props) {
   const total_ht = doc.total;
   const tva = total_ht * TVA_RATE;
   const total_ttc = total_ht + tva;
+
+  const handleWhatsApp = async () => {
+    setGeneratingPdf(true);
+    try {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const html2pdf = (await import("html2pdf.js" as any)).default;
+      const content = printRef.current;
+      if (!content) return;
+
+      // Wrapper avec les styles du document
+      const wrapper = document.createElement("div");
+      wrapper.style.cssText = "font-family: Arial, Helvetica, sans-serif; font-size: 13px; color: #1a1a1a; background: white; padding: 14mm 16mm; width: 210mm;";
+      wrapper.innerHTML = content.innerHTML;
+      document.body.appendChild(wrapper);
+
+      const opt = {
+        margin: 0,
+        filename: `${doc.numero}.pdf`,
+        image: { type: "jpeg", quality: 0.98 },
+        html2canvas: { scale: 2, useCORS: true, logging: false },
+        jsPDF: { unit: "mm", format: "a4", orientation: "portrait" },
+      };
+
+      const blob: Blob = await html2pdf().from(wrapper).set(opt).outputPdf("blob");
+      document.body.removeChild(wrapper);
+
+      const file = new File([blob], `${doc.numero}.pdf`, { type: "application/pdf" });
+
+      // Mobile : partage natif (ouvre WhatsApp directement)
+      if (navigator.canShare && navigator.canShare({ files: [file] })) {
+        await navigator.share({ files: [file], title: doc.numero });
+      } else {
+        // Desktop : téléchargement + ouverture WhatsApp Web
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement("a");
+        link.href = url;
+        link.download = `${doc.numero}.pdf`;
+        link.click();
+        URL.revokeObjectURL(url);
+        setTimeout(() => window.open("https://web.whatsapp.com/", "_blank"), 400);
+        toast("PDF téléchargé. Glissez-le dans la conversation WhatsApp Web.", { icon: "📎", duration: 6000 });
+      }
+    } catch {
+      toast.error("Erreur lors de la génération du PDF");
+    }
+    setGeneratingPdf(false);
+  };
 
   const handlePrint = () => {
     const content = printRef.current;
@@ -119,7 +167,11 @@ export default function DocumentPreview({ document: doc, onClose }: Props) {
   };
 
   const fmt = (n: number) => `${Number(n).toLocaleString("fr-FR")} DJF`;
-  const fmtDate = (d: string) => d ? new Date(d).toLocaleDateString("fr-FR", { day: "2-digit", month: "long", year: "numeric" }) : "—";
+  const fmtDate = (d: string) => {
+    if (!d) return "—";
+    const [y, m, day] = d.split("-").map(Number);
+    return new Date(y, m - 1, day).toLocaleDateString("fr-FR", { day: "2-digit", month: "long", year: "numeric" });
+  };
 
   return (
     <>
@@ -147,18 +199,29 @@ export default function DocumentPreview({ document: doc, onClose }: Props) {
             <span className="text-sm font-semibold text-gray-700">{doc.numero}</span>
             <span className="text-sm text-gray-400">— {doc.client_nom}</span>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 flex-wrap">
+            {/* WhatsApp en premier */}
+            <button
+              onClick={handleWhatsApp}
+              disabled={generatingPdf}
+              className="flex items-center gap-2 px-4 py-2 bg-[#25D366] hover:bg-[#1ebe5d] text-white rounded-xl text-sm font-semibold transition-colors disabled:opacity-60"
+            >
+              {generatingPdf
+                ? <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                : <MessageCircle size={15} />
+              }
+              {generatingPdf ? "Génération..." : "WhatsApp (PDF)"}
+            </button>
+            {/* Email */}
             <button
               onClick={handleSendEmail}
               disabled={sending || sent}
               className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold transition-colors disabled:opacity-60 ${
-                sent
-                  ? "bg-green-500 text-white"
-                  : "bg-amber-500 hover:bg-amber-600 text-white"
+                sent ? "bg-green-500 text-white" : "bg-amber-500 hover:bg-amber-600 text-white"
               }`}
             >
               {sent ? <Check size={15} /> : sending ? <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" /> : <Send size={15} />}
-              {sent ? "Envoyé !" : sending ? "Envoi..." : `Envoyer à ${doc.client_email || "client"}`}
+              {sent ? "Envoyé !" : sending ? "Envoi..." : `Email — ${doc.client_email || "client"}`}
             </button>
             <button
               onClick={handlePrint}
@@ -293,7 +356,7 @@ export default function DocumentPreview({ document: doc, onClose }: Props) {
                   <p style={{ fontSize: "10px", fontWeight: 700, textTransform: "uppercase", color: isDevis ? "#d97706" : "#408398", letterSpacing: "1px", marginBottom: "6px" }}>
                     Notes
                   </p>
-                  <p style={{ fontSize: "11px", color: "#555", lineHeight: "1.6", background: "#f5f9fb", padding: "10px 12px", borderRadius: "6px", borderLeft: `3px solid ${isDevis ? "#d97706" : "#408398"}` }}>
+                  <p style={{ fontSize: "11px", color: "#555", lineHeight: "1.6", background: "#f5f9fb", padding: "10px 12px", borderRadius: "6px", borderLeft: `3px solid ${isDevis ? "#d97706" : "#408398"}`, whiteSpace: "pre-wrap" }}>
                     {doc.notes}
                   </p>
                 </div>

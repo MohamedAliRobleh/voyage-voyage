@@ -3,10 +3,44 @@
 import { useState, useEffect } from "react";
 import { supabase } from "@/lib/supabase";
 import type { Client, Facture, LigneFacture } from "@/lib/supabase";
-import { Plus, Trash2, X, FileText, Check, Send, Eye, TrendingUp, Clock, ArrowRight } from "lucide-react";
+import { Plus, Trash2, X, FileText, Check, Send, Eye, TrendingUp, Clock, ArrowRight, BookOpen, ChevronRight } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import toast from "react-hot-toast";
 import DocumentPreview from "./DocumentPreview";
+import CatalogModal from "./CatalogModal";
+
+// Date locale au format YYYY-MM-DD (évite le décalage UTC)
+function localDateStr(d = new Date()) {
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+}
+
+const MODELE_STANDARD = `✅ INCLUS
+• Transport aller-retour depuis Djibouti-Ville
+• Hébergement selon formule choisie (sauf formule Journée uniquement)
+• Petit-déjeuner et dîner (déjeuner inclus selon formule choisie)
+• Encadrement par guide local
+• Réduction -10% sur la 2ème nuit (Loubatanleh uniquement)
+
+❌ NON INCLUS
+• Boissons et dépenses personnelles
+• Visite Mangrove (Godoria uniquement — 2 000 FDJ/adulte · 1 000 FDJ/enfant)
+• Activités nautiques : snorkeling, plongée (Hougeif et Sables Blancs uniquement)
+• Assurance voyage
+
+💳 MODALITÉS DE PAIEMENT
+• Paiement en espèces uniquement (FDJ)
+• Acompte de 50% requis pour confirmer la réservation
+• Solde à régler avant le départ
+
+🚫 CONDITIONS D'ANNULATION
+• Annulation gratuite jusqu'à 72h avant le départ
+• Entre 72h et 24h avant le départ : 50% du montant retenu
+• Moins de 24h avant le départ : 100% du montant retenu
+
+📍 INFORMATIONS LOGISTIQUES
+• Rendez-vous : Gabode 5, Zone Stid — Djibouti-Ville
+• Heure de départ : 7h00 (sauf indication contraire)
+• À prévoir : chapeau, crème solaire, eau, chaussures adaptées`;
 
 const statutConfig = {
   brouillon:      { label: "Brouillon",      bg: "bg-gray-100",    text: "text-gray-500",    dot: "bg-gray-400" },
@@ -36,12 +70,14 @@ export default function FacturesSection() {
   const [selected, setSelected] = useState<Facture | null>(null);
   const [previewDoc, setPreviewDoc] = useState<Facture | null>(null);
   const [filterType, setFilterType] = useState<"all" | "facture" | "devis">("all");
+  const [showCatalog, setShowCatalog] = useState(false);
 
   const [form, setForm] = useState({
     client_id: "",
     client_nom: "",
     client_email: "",
-    date: new Date().toISOString().split("T")[0],
+    date: localDateStr(),
+    date_depart: "",
     echeance: "",
     notes: "",
     lignes: [{ ...emptyLigne }] as LigneFacture[],
@@ -66,7 +102,7 @@ export default function FacturesSection() {
 
   const openForm = (type: "facture" | "devis") => {
     setFormType(type);
-    setForm({ client_id: "", client_nom: "", client_email: "", date: new Date().toISOString().split("T")[0], echeance: "", notes: "", lignes: [{ ...emptyLigne }] });
+    setForm({ client_id: "", client_nom: "", client_email: "", date: localDateStr(), date_depart: "", echeance: "", notes: "", lignes: [{ ...emptyLigne }] });
     setShowForm(true);
   };
 
@@ -94,6 +130,7 @@ export default function FacturesSection() {
       client_nom: form.client_nom, client_email: form.client_email,
       date: form.date, echeance: form.echeance || null,
       statut: "brouillon", lignes: lignesValides, total, notes: form.notes,
+      date_depart: form.date_depart || null,
       token,
     });
     if (error) { toast.error("Erreur lors de la création"); return; }
@@ -109,6 +146,29 @@ export default function FacturesSection() {
     if (selected?.id === id) setSelected({ ...selected, statut });
   };
 
+  const convertirEnFacture = async (doc: Facture) => {
+    const numero = generateNumero(factures, "facture");
+    const token = crypto.randomUUID();
+    const { error } = await supabase.from("factures").insert({
+      numero,
+      type: "facture",
+      client_id: doc.client_id || null,
+      client_nom: doc.client_nom,
+      client_email: doc.client_email,
+      date: localDateStr(),
+      echeance: null,
+      statut: "confirmé",
+      lignes: doc.lignes,
+      total: doc.total,
+      notes: doc.notes,
+      token,
+    });
+    if (error) { toast.error("Erreur lors de la conversion"); return; }
+    toast.success(`Facture ${numero} créée depuis le devis ${doc.numero} ✓`);
+    setSelected(null);
+    loadData();
+  };
+
   const deleteFacture = async (id: string) => {
     if (!confirm("Supprimer ce document ?")) return;
     await supabase.from("factures").delete().eq("id", id);
@@ -118,7 +178,11 @@ export default function FacturesSection() {
   };
 
   const fmt = (n: number) => `${Number(n).toLocaleString("fr-FR")} DJF`;
-  const fmtDate = (d: string) => d ? new Date(d).toLocaleDateString("fr-FR") : "—";
+  const fmtDate = (d: string) => {
+    if (!d) return "—";
+    const [y, m, day] = d.split("-").map(Number);
+    return new Date(y, m - 1, day).toLocaleDateString("fr-FR");
+  };
   const filtered = factures.filter(f => filterType === "all" || f.type === filterType);
 
   // Stats
@@ -148,23 +212,52 @@ export default function FacturesSection() {
 
       <div className="p-5 space-y-5">
         {/* Statut */}
-        <div>
-          <p className="text-[10px] font-bold uppercase tracking-wider text-gray-400 mb-2">Statut</p>
-          <div className="flex flex-wrap gap-1.5">
-            {(Object.keys(statutConfig) as Array<keyof typeof statutConfig>).map(s => {
-              const cfg = statutConfig[s];
-              const active = doc.statut === s;
-              return (
-                <button key={s} onClick={() => changeStatut(doc.id, s)}
-                  className={`flex items-center justify-center gap-1 px-2.5 py-2 rounded-xl text-[10px] font-semibold border transition-all
-                    ${active ? `${cfg.bg} ${cfg.text} border-transparent` : "border-gray-200 text-gray-400 hover:border-gray-300 hover:text-gray-500"}`}>
-                  {active && <Check size={10} />}
-                  {cfg.label}
+        {(() => {
+          const nextDevis: Record<string, Facture["statut"] | null> = {
+            brouillon: "envoyé", envoyé: "accepté", accepté: null,
+            en_negociation: "accepté", confirmé: null, payé: null,
+          };
+          const nextFacture: Record<string, Facture["statut"] | null> = {
+            brouillon: "confirmé", envoyé: "confirmé", en_negociation: "confirmé",
+            accepté: "confirmé", confirmé: "payé", payé: null,
+          };
+          const nextStatut = doc.type === "devis" ? nextDevis[doc.statut] : nextFacture[doc.statut];
+          const nextCfg = nextStatut ? statutConfig[nextStatut] : null;
+          const currCfg = statutConfig[doc.statut as keyof typeof statutConfig] || statutConfig.brouillon;
+
+          const nextBtnColor: Record<string, string> = {
+            envoyé:   "bg-blue-500 hover:bg-blue-600",
+            accepté:  "bg-emerald-500 hover:bg-emerald-600",
+            confirmé: "bg-purple-500 hover:bg-purple-600",
+            payé:     "bg-teal-500 hover:bg-teal-600",
+          };
+
+          return (
+            <div>
+              <p className="text-[10px] font-bold uppercase tracking-wider text-gray-400 mb-2">Statut</p>
+              {/* Badge statut actuel */}
+              <div className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold mb-3 ${currCfg.bg} ${currCfg.text}`}>
+                <span className={`w-1.5 h-1.5 rounded-full ${currCfg.dot}`} />
+                {currCfg.label}
+              </div>
+              {/* Bouton étape suivante */}
+              {nextStatut && nextCfg && (
+                <button
+                  onClick={() => changeStatut(doc.id, nextStatut)}
+                  className={`w-full flex items-center justify-center gap-2 py-2.5 rounded-xl text-xs font-bold text-white transition-colors ${nextBtnColor[nextStatut]}`}
+                >
+                  <ChevronRight size={13} />
+                  Marquer comme {nextCfg.label}
                 </button>
-              );
-            })}
-          </div>
-        </div>
+              )}
+              {!nextStatut && doc.type === "facture" && (
+                <div className="flex items-center justify-center gap-1.5 py-2 text-xs font-semibold text-teal-600">
+                  <Check size={13} /> Dossier clôturé
+                </div>
+              )}
+            </div>
+          );
+        })()}
 
         {/* Infos */}
         <div className="grid grid-cols-2 gap-3">
@@ -213,6 +306,12 @@ export default function FacturesSection() {
 
         {/* Actions */}
         <div className="flex flex-col gap-2 pt-1">
+          {doc.type === "devis" && doc.statut === "accepté" && (
+            <button onClick={() => convertirEnFacture(doc)}
+              className="flex items-center justify-center gap-2 py-2.5 bg-emerald-500 text-white rounded-xl text-xs font-bold hover:bg-emerald-600 transition-colors">
+              <ArrowRight size={13} /> Convertir en facture
+            </button>
+          )}
           <button onClick={() => { setPreviewDoc(doc); setSelected(null); }}
             className="flex items-center justify-center gap-2 py-2.5 bg-[#408398] text-white rounded-xl text-xs font-semibold hover:bg-[#326e80] transition-colors">
             <Eye size={13} /> Aperçu & Envoi
@@ -491,8 +590,8 @@ export default function FacturesSection() {
                   <div className="grid grid-cols-2 gap-2.5">
                     <div>
                       <label className="block text-[10px] font-bold uppercase tracking-wider text-gray-400 mb-1.5">Date d&apos;émission</label>
-                      <input type="date" value={form.date} onChange={e => setForm({ ...form, date: e.target.value })}
-                        className="w-full px-3.5 py-2.5 border border-gray-200 rounded-xl text-sm text-gray-900 focus:outline-none focus:border-[#408398]" />
+                      <input type="date" value={form.date} readOnly
+                        className="w-full px-3.5 py-2.5 border border-gray-100 rounded-xl text-sm text-gray-500 bg-gray-50 cursor-not-allowed" />
                     </div>
                     <div>
                       <label className="block text-[10px] font-bold uppercase tracking-wider text-gray-400 mb-1.5">
@@ -501,6 +600,15 @@ export default function FacturesSection() {
                       <input type="date" value={form.echeance} onChange={e => setForm({ ...form, echeance: e.target.value })}
                         className="w-full px-3.5 py-2.5 border border-gray-200 rounded-xl text-sm text-gray-900 focus:outline-none focus:border-[#408398]" />
                     </div>
+                  </div>
+
+                  {/* Date de départ */}
+                  <div>
+                    <label className="block text-[10px] font-bold uppercase tracking-wider text-gray-400 mb-1.5">
+                      📅 Date de départ du voyage
+                    </label>
+                    <input type="date" value={form.date_depart} onChange={e => setForm({ ...form, date_depart: e.target.value })}
+                      className="w-full px-3.5 py-2.5 border border-[#408398]/40 rounded-xl text-sm text-gray-900 focus:outline-none focus:border-[#408398] bg-[#408398]/5" />
                   </div>
 
                   {/* Lignes */}
@@ -529,10 +637,16 @@ export default function FacturesSection() {
                         </div>
                       ))}
                     </div>
-                    <button type="button" onClick={() => setForm({ ...form, lignes: [...form.lignes, { ...emptyLigne }] })}
-                      className="mt-2 flex items-center gap-1 text-xs text-[#408398] font-medium hover:underline">
-                      <Plus size={11} /> Ajouter une ligne
-                    </button>
+                    <div className="mt-2 flex items-center gap-3">
+                      <button type="button" onClick={() => setForm({ ...form, lignes: [...form.lignes, { ...emptyLigne }] })}
+                        className="flex items-center gap-1 text-xs text-[#408398] font-medium hover:underline">
+                        <Plus size={11} /> Ajouter une ligne
+                      </button>
+                      <button type="button" onClick={() => setShowCatalog(true)}
+                        className="flex items-center gap-1.5 px-3 py-1.5 bg-amber-50 text-amber-700 border border-amber-200 rounded-lg text-xs font-semibold hover:bg-amber-100 transition-colors">
+                        <BookOpen size={11} /> Catalogue des tarifs
+                      </button>
+                    </div>
                     <div className="mt-3 flex justify-end">
                       <div className="bg-[#0e2d38] rounded-xl px-4 py-2.5 flex items-center gap-6">
                         <span className="text-xs text-white/60">Total TTC</span>
@@ -543,9 +657,18 @@ export default function FacturesSection() {
 
                   {/* Notes */}
                   <div>
-                    <label className="block text-[10px] font-bold uppercase tracking-wider text-gray-400 mb-1.5">Notes</label>
-                    <textarea value={form.notes} onChange={e => setForm({ ...form, notes: e.target.value })} rows={2}
-                      className="w-full px-3.5 py-2.5 border border-gray-200 rounded-xl text-sm text-gray-900 focus:outline-none focus:border-[#408398] resize-none"
+                    <div className="flex items-center justify-between mb-1.5">
+                      <label className="block text-[10px] font-bold uppercase tracking-wider text-gray-400">Notes</label>
+                      <button
+                        type="button"
+                        onClick={() => setForm({ ...form, notes: MODELE_STANDARD })}
+                        className="text-[10px] font-semibold text-[#408398] hover:text-[#326e80] bg-[#408398]/10 hover:bg-[#408398]/20 px-2.5 py-1 rounded-lg transition-colors"
+                      >
+                        Modèle standard
+                      </button>
+                    </div>
+                    <textarea value={form.notes} onChange={e => setForm({ ...form, notes: e.target.value })} rows={4}
+                      className="w-full px-3.5 py-2.5 border border-gray-200 rounded-xl text-sm text-gray-900 focus:outline-none focus:border-[#408398] resize-none font-mono"
                       placeholder="Inclus dans le prix, conditions spéciales..." />
                   </div>
 
@@ -570,6 +693,20 @@ export default function FacturesSection() {
       <AnimatePresence>
         {previewDoc && (
           <DocumentPreview document={previewDoc} onClose={() => setPreviewDoc(null)} />
+        )}
+      </AnimatePresence>
+
+      {/* Catalog Modal */}
+      <AnimatePresence>
+        {showCatalog && (
+          <CatalogModal
+            onAdd={(lignes) => {
+              setForm(f => ({ ...f, lignes: [...f.lignes.filter(l => l.description.trim() !== ""), ...lignes] }));
+              setShowCatalog(false);
+              toast.success(`${lignes.length} ligne${lignes.length > 1 ? "s" : ""} ajoutée${lignes.length > 1 ? "s" : ""}`);
+            }}
+            onClose={() => setShowCatalog(false)}
+          />
         )}
       </AnimatePresence>
     </div>

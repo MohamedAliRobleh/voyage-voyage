@@ -3,48 +3,62 @@
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
-  Lock, LayoutDashboard, MapPin, Globe, Phone, Mail,
+  Lock, LayoutDashboard, Calendar, Building2,
   Users, FileText, TrendingUp, Eye, EyeOff, LogOut,
-  Map, Briefcase, Package, MessageCircle, Clock, CheckCircle,
+  Wallet, ClipboardList, BarChart2, FileDown, Star,
 } from "lucide-react";
-import { destinations } from "@/lib/destinations";
 import ClientsSection from "./ClientsSection";
 import FacturesSection from "./FacturesSection";
+import ReversementsSection from "./ReversementsSection";
+import DashboardSection from "./DashboardSection";
+import CalendarSection from "./CalendarSection";
+import PartenairesSection from "./PartenairesSection";
+import TresorerieSection from "./TresorerieSection";
+import OperationsSection from "./OperationsSection";
+import AnalyticsSection from "./AnalyticsSection";
+import RapportsSection from "./RapportsSection";
+import ReputationSection from "./ReputationSection";
+import { supabase } from "@/lib/supabase";
 
-const ADMIN_PASSWORD = "vv2024admin";
-
-type Tab = "dashboard" | "clients" | "factures";
+type Tab = "dashboard" | "clients" | "factures" | "reversements" | "calendrier" | "partenaires" | "tresorerie" | "operations" | "analytics" | "rapports" | "reputation";
 
 export default function AdminPage() {
   const [authenticated, setAuthenticated] = useState(false);
+  const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
-  const [error, setError] = useState(false);
-  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+  const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<Tab>("dashboard");
 
   useEffect(() => {
-    const auth = sessionStorage.getItem("vv-admin");
-    if (auth === "true") setAuthenticated(true);
+    // Vérifie si une session Supabase existe déjà
+    supabase.auth.getSession().then(({ data }) => {
+      if (data.session) setAuthenticated(true);
+      setLoading(false);
+    });
+    // Écoute les changements de session
+    const { data: listener } = supabase.auth.onAuthStateChange((_event, session) => {
+      setAuthenticated(!!session);
+    });
+    return () => listener.subscription.unsubscribe();
   }, []);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
-    await new Promise((r) => setTimeout(r, 600));
-    if (password === ADMIN_PASSWORD) {
-      sessionStorage.setItem("vv-admin", "true");
-      setAuthenticated(true);
-      setError(false);
-    } else {
-      setError(true);
+    setError("");
+    const { error: authError } = await supabase.auth.signInWithPassword({ email, password });
+    if (authError) {
+      setError("Email ou mot de passe incorrect.");
     }
     setLoading(false);
   };
 
-  const handleLogout = () => {
-    sessionStorage.removeItem("vv-admin");
+  const handleLogout = async () => {
+    await supabase.auth.signOut();
     setAuthenticated(false);
+    setEmail("");
     setPassword("");
   };
 
@@ -64,12 +78,23 @@ export default function AdminPage() {
           <p className="text-sm text-gray-400 text-center mb-8">Voyage Voyage — Accès restreint</p>
 
           <form onSubmit={handleLogin} className="space-y-4">
+            <input
+              type="email"
+              value={email}
+              onChange={(e) => { setEmail(e.target.value); setError(""); }}
+              placeholder="Email"
+              autoComplete="email"
+              className={`w-full px-4 py-3 border rounded-xl text-gray-900 focus:outline-none focus:ring-2 transition-all ${
+                error ? "border-red-400 focus:ring-red-200" : "border-gray-200 focus:ring-[#408398]/20 focus:border-[#408398]"
+              }`}
+            />
             <div className="relative">
               <input
                 type={showPassword ? "text" : "password"}
                 value={password}
-                onChange={(e) => { setPassword(e.target.value); setError(false); }}
+                onChange={(e) => { setPassword(e.target.value); setError(""); }}
                 placeholder="Mot de passe"
+                autoComplete="current-password"
                 className={`w-full px-4 py-3 pr-12 border rounded-xl text-gray-900 focus:outline-none focus:ring-2 transition-all ${
                   error ? "border-red-400 focus:ring-red-200" : "border-gray-200 focus:ring-[#408398]/20 focus:border-[#408398]"
                 }`}
@@ -98,7 +123,7 @@ export default function AdminPage() {
 
             <button
               type="submit"
-              disabled={loading || !password}
+              disabled={loading || !password || !email}
               className="w-full py-3 bg-[#408398] text-white rounded-xl font-semibold hover:bg-[#326e80] transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
             >
               {loading ? (
@@ -116,34 +141,18 @@ export default function AdminPage() {
     );
   }
 
-  const pages = [
-    { label: "Accueil", href: "/", icon: LayoutDashboard },
-    { label: "Destinations", href: "/destinations", icon: Map },
-    { label: "Services", href: "/services", icon: Briefcase },
-    { label: "Djibouti", href: "/djibouti", icon: Globe },
-    { label: "À propos", href: "/about", icon: Users },
-    { label: "Contact", href: "/contact", icon: MessageCircle },
-  ];
-
-  const stats = [
-    { label: "Destinations", value: destinations.length, icon: MapPin, color: "bg-blue-50 text-blue-600" },
-    { label: "Pages actives", value: pages.length, icon: FileText, color: "bg-green-50 text-green-600" },
-    { label: "Langues", value: "3 (FR/EN/AR)", icon: Globe, color: "bg-purple-50 text-purple-600" },
-    { label: "Packages", value: 3, icon: Package, color: "bg-orange-50 text-orange-600" },
-  ];
-
-  const contactInfo = [
-    { icon: Phone, label: "Téléphone", value: "+253 77 07 33 77" },
-    { icon: MessageCircle, label: "WhatsApp", value: "+253 77 07 33 77" },
-    { icon: Mail, label: "Email", value: "voyagevoyagedjib@gmail.com" },
-    { icon: MapPin, label: "Adresse", value: "Gabode 5 - Zone Stid, Extension Lot 227, Djibouti-Ville" },
-    { icon: Clock, label: "Horaires", value: "Lun–Sam : 8h–18h" },
-  ];
-
   const tabs: { id: Tab; label: string; icon: React.ReactNode }[] = [
     { id: "dashboard", label: "Dashboard", icon: <LayoutDashboard size={15} /> },
+    { id: "calendrier", label: "Calendrier", icon: <Calendar size={15} /> },
+    { id: "partenaires", label: "Partenaires", icon: <Building2 size={15} /> },
     { id: "clients", label: "Clients", icon: <Users size={15} /> },
     { id: "factures", label: "Factures", icon: <FileText size={15} /> },
+    { id: "reversements", label: "Reversements", icon: <TrendingUp size={15} /> },
+    { id: "tresorerie", label: "Trésorerie", icon: <Wallet size={15} /> },
+    { id: "operations", label: "Opérations", icon: <ClipboardList size={15} /> },
+    { id: "analytics", label: "Analytics", icon: <BarChart2 size={15} /> },
+    { id: "rapports", label: "Rapports", icon: <FileDown size={15} /> },
+    { id: "reputation", label: "Réputation", icon: <Star size={15} /> },
   ];
 
   return (
@@ -190,105 +199,37 @@ export default function AdminPage() {
       <div className="max-w-5xl mx-auto px-4 py-8">
 
         {/* Dashboard Tab */}
-        {activeTab === "dashboard" && (
-          <div className="space-y-8">
-            {/* Stats */}
-            <div>
-              <h2 className="text-sm font-semibold text-gray-400 uppercase tracking-widest mb-4">Vue d&apos;ensemble</h2>
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                {stats.map((stat, i) => (
-                  <motion.div
-                    key={i}
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: i * 0.08 }}
-                    className="bg-white rounded-2xl p-5 shadow-sm border border-gray-100"
-                  >
-                    <div className={`w-10 h-10 rounded-xl flex items-center justify-center mb-3 ${stat.color}`}>
-                      <stat.icon size={18} />
-                    </div>
-                    <p className="text-2xl font-bold text-gray-900">{stat.value}</p>
-                    <p className="text-xs text-gray-400 mt-0.5">{stat.label}</p>
-                  </motion.div>
-                ))}
-              </div>
-            </div>
-
-            {/* Analytics notice */}
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.3 }}
-              className="bg-[#408398]/10 border border-[#408398]/20 rounded-2xl p-5 flex gap-4"
-            >
-              <div className="w-10 h-10 bg-[#408398]/20 rounded-xl flex items-center justify-center shrink-0">
-                <TrendingUp size={18} className="text-[#408398]" />
-              </div>
-              <div>
-                <p className="font-semibold text-gray-900 text-sm">Statistiques de visites</p>
-                <p className="text-gray-500 text-sm mt-1">
-                  Statistiques en temps réel disponibles sur{" "}
-                  <a href="https://cloud.umami.is" target="_blank" rel="noopener noreferrer" className="text-[#408398] underline font-medium">cloud.umami.is</a>
-                  {" "}— visites, pages populaires, pays des visiteurs, appareils.
-                </p>
-              </div>
-            </motion.div>
-
-            {/* Pages */}
-            <div>
-              <h2 className="text-sm font-semibold text-gray-400 uppercase tracking-widest mb-4">Pages du site</h2>
-              <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
-                {pages.map((page, i) => (
-                  <a
-                    key={i}
-                    href={page.href}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="flex items-center justify-between px-5 py-4 hover:bg-gray-50 transition-colors border-b border-gray-50 last:border-0"
-                  >
-                    <div className="flex items-center gap-3">
-                      <div className="w-8 h-8 bg-[#408398]/10 rounded-lg flex items-center justify-center">
-                        <page.icon size={15} className="text-[#408398]" />
-                      </div>
-                      <span className="text-sm font-medium text-gray-700">{page.label}</span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <span className="flex items-center gap-1 text-xs text-green-600 bg-green-50 px-2 py-0.5 rounded-full">
-                        <CheckCircle size={11} />
-                        En ligne
-                      </span>
-                      <Eye size={15} className="text-gray-300" />
-                    </div>
-                  </a>
-                ))}
-              </div>
-            </div>
-
-            {/* Contact info */}
-            <div>
-              <h2 className="text-sm font-semibold text-gray-400 uppercase tracking-widest mb-4">Informations de contact affichées</h2>
-              <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
-                {contactInfo.map((item, i) => (
-                  <div key={i} className="flex items-start gap-4 px-5 py-4 border-b border-gray-50 last:border-0">
-                    <div className="w-8 h-8 bg-[#408398]/10 rounded-lg flex items-center justify-center shrink-0 mt-0.5">
-                      <item.icon size={15} className="text-[#408398]" />
-                    </div>
-                    <div>
-                      <p className="text-xs text-gray-400 mb-0.5">{item.label}</p>
-                      <p className="text-sm font-medium text-gray-800">{item.value}</p>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          </div>
-        )}
+        {activeTab === "dashboard" && <DashboardSection />}
 
         {/* Clients Tab */}
         {activeTab === "clients" && <ClientsSection />}
 
         {/* Factures Tab */}
         {activeTab === "factures" && <FacturesSection />}
+
+        {/* Calendrier Tab */}
+        {activeTab === "calendrier" && <CalendarSection />}
+
+        {/* Partenaires Tab */}
+        {activeTab === "partenaires" && <PartenairesSection />}
+
+        {/* Reversements Tab */}
+        {activeTab === "reversements" && <ReversementsSection />}
+
+        {/* Trésorerie Tab */}
+        {activeTab === "tresorerie" && <TresorerieSection />}
+
+        {/* Opérations Tab */}
+        {activeTab === "operations" && <OperationsSection />}
+
+        {/* Analytics Tab */}
+        {activeTab === "analytics" && <AnalyticsSection />}
+
+        {/* Rapports Tab */}
+        {activeTab === "rapports" && <RapportsSection />}
+
+        {/* Réputation Tab */}
+        {activeTab === "reputation" && <ReputationSection />}
 
       </div>
     </div>

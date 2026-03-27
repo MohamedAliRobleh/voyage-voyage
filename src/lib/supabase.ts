@@ -21,6 +21,7 @@ export type Client = {
   telephone: string;
   adresse: string;
   notes: string;
+  source: "direct" | "whatsapp" | "site_web" | "reference" | "autre";
   created_at: string;
 };
 
@@ -31,6 +32,35 @@ export type LigneFacture = {
   total: number;
 };
 
+export type Partenaire = {
+  id: string;
+  nom: string;
+  contact: string;
+  telephone: string;
+  email: string;
+  localisation: string;
+  commission_defaut: number;
+  notes: string;
+  note_performance: number;
+  created_at: string;
+};
+
+export type Reversement = {
+  id: string;
+  facture_id: string;
+  facture_numero: string;
+  client_nom: string;
+  site_nom: string;
+  total_client: number;
+  unite: "%" | "FDJ";
+  valeur: number;
+  montant_reverser: number;
+  marge: number;
+  statut: "à reverser" | "reversé";
+  notes: string;
+  created_at: string;
+};
+
 export type Facture = {
   id: string;
   numero: string;
@@ -39,7 +69,8 @@ export type Facture = {
   client_nom: string;
   client_email: string;
   date: string;
-  echeance: string;
+  date_depart: string | null;
+  echeance: string | null;
   statut: "brouillon" | "envoyé" | "accepté" | "en_negociation" | "confirmé" | "payé";
   lignes: LigneFacture[];
   total: number;
