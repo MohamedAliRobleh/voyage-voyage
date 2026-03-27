@@ -337,8 +337,10 @@ export default function OperationsSection() {
       date_depart: doc.date_depart, date_retour: doc.date_retour,
       token: crypto.randomUUID(),
     });
-    if (error) return;
-    // reload — realtime will catch it too
+    if (error) { return; }
+    // Marquer le devis comme converti (statut "confirmé" → sort du kanban devis)
+    await supabase.from("factures").update({ statut: "confirmé" }).eq("id", doc.id);
+    load();
   };
 
   const devis    = factures.filter(f => f.type === "devis");
