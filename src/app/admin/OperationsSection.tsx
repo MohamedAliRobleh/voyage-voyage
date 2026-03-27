@@ -17,7 +17,7 @@ const SITES = [
   "Allos", "Obock", "Forêt du Day", "Abourma", "Moucha",
 ];
 
-const STATUTS_DEVIS: Facture["statut"][]    = ["brouillon", "envoyé", "en_negociation", "accepté"];
+const STATUTS_DEVIS: Facture["statut"][]    = ["brouillon", "envoyé", "accepté"];
 const STATUTS_FACTURE: Facture["statut"][] = ["envoyé", "confirmé", "payé"];
 
 const STATUT_LABELS: Record<Facture["statut"], string> = {
@@ -40,7 +40,7 @@ const STATUT_COLORS: Record<Facture["statut"], { card: string; badge: string; he
 
 const NEXT_STATUT_DEVIS: Record<Facture["statut"], Facture["statut"] | null> = {
   brouillon:      "envoyé",
-  envoyé:         "en_negociation",
+  envoyé:         "accepté",
   en_negociation: "accepté",
   accepté:        null,
   confirmé:       null,
