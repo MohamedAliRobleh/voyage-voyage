@@ -5,7 +5,7 @@ import { supabase } from "@/lib/supabase";
 import type { Facture } from "@/lib/supabase";
 import { motion } from "framer-motion";
 import {
-  ClipboardList, User, CalendarDays, ChevronRight,
+  ClipboardList, User, CalendarDays, ChevronRight, ChevronLeft,
   Clock, AlertTriangle, CheckCircle2,
 } from "lucide-react";
 
@@ -47,6 +47,15 @@ const NEXT_STATUT_DEVIS: Record<Facture["statut"], Facture["statut"] | null> = {
   payé:           null,
 };
 
+const PREV_STATUT_DEVIS: Record<Facture["statut"], Facture["statut"] | null> = {
+  brouillon:      null,
+  envoyé:         "brouillon",
+  en_negociation: "envoyé",
+  accepté:        "envoyé",
+  confirmé:       null,
+  payé:           null,
+};
+
 const NEXT_STATUT_FACTURE: Record<Facture["statut"], Facture["statut"] | null> = {
   brouillon:      "envoyé",
   envoyé:         "confirmé",
@@ -54,6 +63,15 @@ const NEXT_STATUT_FACTURE: Record<Facture["statut"], Facture["statut"] | null> =
   accepté:        "confirmé",
   confirmé:       "payé",
   payé:           null,
+};
+
+const PREV_STATUT_FACTURE: Record<Facture["statut"], Facture["statut"] | null> = {
+  brouillon:      null,
+  envoyé:         "brouillon",
+  en_negociation: "envoyé",
+  accepté:        "envoyé",
+  confirmé:       "envoyé",
+  payé:           "confirmé",
 };
 
 const SITE_COLORS: Record<string, string> = {
@@ -136,6 +154,7 @@ function KanbanCard({
 }) {
   const site = detectSite(facture);
   const next = (facture.type === "devis" ? NEXT_STATUT_DEVIS : NEXT_STATUT_FACTURE)[facture.statut];
+  const prev = (facture.type === "devis" ? PREV_STATUT_DEVIS : PREV_STATUT_FACTURE)[facture.statut];
   const colors = STATUT_COLORS[facture.statut];
   const isDevisAccepte = facture.type === "devis" && facture.statut === "accepté";
   const isFacturePaye  = facture.type === "facture" && facture.statut === "payé";
@@ -204,6 +223,17 @@ function KanbanCard({
           <CheckCircle2 size={13} />
           Payé — à clôturer
         </div>
+      )}
+
+      {/* Retour arrière */}
+      {prev && (
+        <button
+          onClick={() => onStatusChange(facture.id, prev)}
+          className="w-full flex items-center justify-center gap-1.5 text-[10px] font-medium py-1 rounded-lg text-gray-300 hover:text-gray-500 hover:bg-gray-50 transition-colors mt-1"
+        >
+          <ChevronLeft size={11} />
+          Revenir à {STATUT_LABELS[prev]}
+        </button>
       )}
     </motion.div>
   );
