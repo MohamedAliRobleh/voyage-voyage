@@ -17,15 +17,16 @@ const SITES = [
   "Allos", "Obock", "Forêt du Day", "Abourma", "Moucha",
 ];
 
-const STATUTS: Facture["statut"][] = ["envoyé", "accepté", "confirmé", "payé"];
+const STATUTS_DEVIS: Facture["statut"][]    = ["brouillon", "envoyé", "en_negociation", "accepté"];
+const STATUTS_FACTURE: Facture["statut"][] = ["envoyé", "confirmé", "payé"];
 
 const STATUT_LABELS: Record<Facture["statut"], string> = {
-  brouillon: "Brouillon",
-  envoyé: "Envoyé",
+  brouillon:      "Brouillon",
+  envoyé:         "Envoyé",
   en_negociation: "En discussion",
-  accepté: "Accepté",
-  confirmé: "Confirmé",
-  payé: "Payé",
+  accepté:        "Accepté",
+  confirmé:       "Confirmé",
+  payé:           "Payé",
 };
 
 const STATUT_COLORS: Record<Facture["statut"], { card: string; badge: string; header: string }> = {
@@ -37,10 +38,19 @@ const STATUT_COLORS: Record<Facture["statut"], { card: string; badge: string; he
   payé:           { card: "border-teal-200",    badge: "bg-teal-100 text-teal-600",       header: "bg-teal-50 text-teal-600" },
 };
 
-const NEXT_STATUT: Record<Facture["statut"], Facture["statut"] | null> = {
+const NEXT_STATUT_DEVIS: Record<Facture["statut"], Facture["statut"] | null> = {
   brouillon:      "envoyé",
-  envoyé:         "accepté",
+  envoyé:         "en_negociation",
   en_negociation: "accepté",
+  accepté:        null,
+  confirmé:       null,
+  payé:           null,
+};
+
+const NEXT_STATUT_FACTURE: Record<Facture["statut"], Facture["statut"] | null> = {
+  brouillon:      "envoyé",
+  envoyé:         "confirmé",
+  en_negociation: "confirmé",
   accepté:        "confirmé",
   confirmé:       "payé",
   payé:           null,
@@ -123,7 +133,7 @@ function KanbanCard({
   onStatusChange: (id: string, statut: Facture["statut"]) => void;
 }) {
   const site = detectSite(facture);
-  const next = NEXT_STATUT[facture.statut];
+  const next = (facture.type === "devis" ? NEXT_STATUT_DEVIS : NEXT_STATUT_FACTURE)[facture.statut];
   const colors = STATUT_COLORS[facture.statut];
 
   return (
@@ -213,6 +223,56 @@ function ImminentCard({ facture }: { facture: Facture }) {
   );
 }
 
+function KanbanBoard({ docs, statuts, updating, onStatusChange }: {
+  docs: Facture[];
+  statuts: Facture["statut"][];
+  updating: string | null;
+  onStatusChange: (id: string, statut: Facture["statut"]) => void;
+}) {
+  return (
+    <div className="overflow-x-auto pb-4">
+      <div className="flex gap-4" style={{ minWidth: `${statuts.length * 230}px` }}>
+        {statuts.map(statut => {
+          const cards = docs.filter(f => f.statut === statut);
+          const colors = STATUT_COLORS[statut];
+          return (
+            <div key={statut} className="flex flex-col" style={{ width: 210, flexShrink: 0 }}>
+              <div className={`rounded-xl px-3 py-2 mb-3 flex items-center justify-between ${colors.header}`}>
+                <span className="text-xs font-bold uppercase tracking-wide">{STATUT_LABELS[statut]}</span>
+                <span className={`text-xs font-bold w-5 h-5 rounded-full flex items-center justify-center ${colors.badge}`}>
+                  {cards.length}
+                </span>
+              </div>
+              <div className="flex flex-col gap-2 min-h-[120px]">
+                {cards.length === 0 && (
+                  <div className="flex-1 rounded-xl border-2 border-dashed border-gray-100 flex items-center justify-center min-h-[80px]">
+                    <span className="text-xs text-gray-300">Vide</span>
+                  </div>
+                )}
+                {cards.map(f => (
+                  <div key={f.id} className="relative">
+                    {updating === f.id && (
+                      <div className="absolute inset-0 bg-white/70 rounded-xl flex items-center justify-center z-10">
+                        <div className="w-4 h-4 border-2 border-[#408398]/30 border-t-[#408398] rounded-full animate-spin" />
+                      </div>
+                    )}
+                    <KanbanCard facture={f} onStatusChange={onStatusChange} />
+                  </div>
+                ))}
+              </div>
+              {cards.length > 0 && (
+                <div className="mt-2 text-right text-xs text-gray-400 font-medium">
+                  {fmt(cards.reduce((s, f) => s + f.total, 0))}
+                </div>
+              )}
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
 // ─── Main Component ───────────────────────────────────────────────────────────
 
 export default function OperationsSection() {
@@ -245,7 +305,8 @@ export default function OperationsSection() {
     setUpdating(null);
   };
 
-  const filtered = factures;
+  const devis    = factures.filter(f => f.type === "devis");
+  const facList  = factures.filter(f => f.type === "facture");
 
   // Voyages imminents (tous sites, uniquement confirmé/payé, 7 jours)
   const imminents = factures.filter(f =>
@@ -269,7 +330,7 @@ export default function OperationsSection() {
           <ClipboardList size={20} className="text-[#408398]" />
           Suivi des dossiers
         </h2>
-        <p className="text-sm text-gray-400 mt-0.5">{filtered.length} dossier{filtered.length > 1 ? "s" : ""} en cours</p>
+        <p className="text-sm text-gray-400 mt-0.5">{factures.length} dossier{factures.length > 1 ? "s" : ""} en cours — {devis.length} devis · {facList.length} factures</p>
       </div>
 
       {/* ── Voyages imminents ── */}
@@ -287,54 +348,34 @@ export default function OperationsSection() {
         </section>
       )}
 
-      {/* ── Kanban ── */}
-      <section>
-        <div className="overflow-x-auto pb-4">
-          <div className="flex gap-4" style={{ minWidth: `${STATUTS.length * 230}px` }}>
-            {STATUTS.map(statut => {
-              const cards = filtered.filter(f => f.statut === statut);
-              const colors = STATUT_COLORS[statut];
-              return (
-                <div key={statut} className="flex flex-col" style={{ width: 210, flexShrink: 0 }}>
-                  {/* Column header */}
-                  <div className={`rounded-xl px-3 py-2 mb-3 flex items-center justify-between ${colors.header}`}>
-                    <span className="text-xs font-bold uppercase tracking-wide">{STATUT_LABELS[statut]}</span>
-                    <span className={`text-xs font-bold w-5 h-5 rounded-full flex items-center justify-center ${colors.badge}`}>
-                      {cards.length}
-                    </span>
-                  </div>
+      {/* ── Kanban Devis ── */}
+      {devis.length > 0 && (
+        <section>
+          <h3 className="text-sm font-semibold text-amber-600 uppercase tracking-wide mb-3 flex items-center gap-2">
+            <span className="w-2 h-2 rounded-full bg-amber-400 inline-block" />
+            Devis ({devis.length})
+          </h3>
+          <KanbanBoard docs={devis} statuts={STATUTS_DEVIS} updating={updating} onStatusChange={handleStatusChange} />
+        </section>
+      )}
 
-                  {/* Cards */}
-                  <div className="flex flex-col gap-2 min-h-[120px]">
-                    {cards.length === 0 && (
-                      <div className="flex-1 rounded-xl border-2 border-dashed border-gray-100 flex items-center justify-center">
-                        <span className="text-xs text-gray-300">Vide</span>
-                      </div>
-                    )}
-                    {cards.map(f => (
-                      <div key={f.id} className="relative">
-                        {updating === f.id && (
-                          <div className="absolute inset-0 bg-white/70 rounded-xl flex items-center justify-center z-10">
-                            <div className="w-4 h-4 border-2 border-[#408398]/30 border-t-[#408398] rounded-full animate-spin" />
-                          </div>
-                        )}
-                        <KanbanCard facture={f} onStatusChange={handleStatusChange} />
-                      </div>
-                    ))}
-                  </div>
+      {/* ── Kanban Factures ── */}
+      {facList.length > 0 && (
+        <section>
+          <h3 className="text-sm font-semibold text-[#408398] uppercase tracking-wide mb-3 flex items-center gap-2">
+            <span className="w-2 h-2 rounded-full bg-[#408398] inline-block" />
+            Factures ({facList.length})
+          </h3>
+          <KanbanBoard docs={facList} statuts={STATUTS_FACTURE} updating={updating} onStatusChange={handleStatusChange} />
+        </section>
+      )}
 
-                  {/* Column total */}
-                  {cards.length > 0 && (
-                    <div className="mt-2 text-right text-xs text-gray-400 font-medium">
-                      {fmt(cards.reduce((s, f) => s + f.total, 0))}
-                    </div>
-                  )}
-                </div>
-              );
-            })}
-          </div>
+      {factures.length === 0 && (
+        <div className="text-center py-16 text-gray-300">
+          <ClipboardList size={32} className="mx-auto mb-3" />
+          <p className="text-sm">Aucun dossier en cours</p>
         </div>
-      </section>
+      )}
 
     </div>
   );
