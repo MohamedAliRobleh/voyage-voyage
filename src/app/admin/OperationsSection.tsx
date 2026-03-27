@@ -245,11 +245,11 @@ export default function OperationsSection() {
     setUpdating(null);
   };
 
-  const filtered = factures.filter(f => f.type === "facture");
+  const filtered = factures;
 
   // Voyages imminents (tous sites, uniquement confirmé/payé, 7 jours)
   const imminents = factures.filter(f =>
-    f.type === "facture" && isImminent(f) && ["accepté", "confirmé", "payé"].includes(f.statut)
+    isImminent(f) && ["accepté", "confirmé", "payé"].includes(f.statut)
   );
 
   if (loading) {
@@ -269,7 +269,7 @@ export default function OperationsSection() {
           <ClipboardList size={20} className="text-[#408398]" />
           Suivi des dossiers
         </h2>
-        <p className="text-sm text-gray-400 mt-0.5">{filtered.length} facture{filtered.length > 1 ? "s" : ""} en cours</p>
+        <p className="text-sm text-gray-400 mt-0.5">{filtered.length} dossier{filtered.length > 1 ? "s" : ""} en cours</p>
       </div>
 
       {/* ── Voyages imminents ── */}
