@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect } from "react";
 import { supabase } from "@/lib/supabase";
 import type { Partenaire, Reversement } from "@/lib/supabase";
 import { motion, AnimatePresence } from "framer-motion";
@@ -57,7 +57,6 @@ export default function PartenairesSection() {
   const [selected, setSelected] = useState<Partenaire | null>(null);
   const [form, setForm] = useState<Partial<Partenaire>>({});
   const [showCreate, setShowCreate] = useState(false);
-  const topRef = useRef<HTMLDivElement>(null);
   const [createForm, setCreateForm] = useState({
     nom: "", contact: "", telephone: "", email: "",
     localisation: "", commission_defaut: 0, notes: "",
@@ -114,7 +113,7 @@ export default function PartenairesSection() {
 
   const selectPartenaire = (p: Partenaire | null) => {
     setSelected(p);
-    if (p) topRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+    if (p) window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
   const deletePartenaire = async (p: Partenaire) => {
@@ -153,7 +152,7 @@ export default function PartenairesSection() {
   );
 
   return (
-    <div ref={topRef} className="flex gap-6">
+    <div className="flex gap-6">
 
       {/* Left — partner list */}
       <div className={`flex flex-col gap-4 transition-all ${selected ? "w-64 shrink-0" : "flex-1"}`}>
