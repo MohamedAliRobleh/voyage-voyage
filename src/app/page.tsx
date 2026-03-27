@@ -56,7 +56,7 @@ export default function HomePage() {
             initial={{ opacity: 0, y: 30 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.8, delay: 0.2 }}
-            className="text-6xl md:text-8xl font-black text-white uppercase mb-5 leading-none"
+            className="text-4xl sm:text-6xl md:text-8xl font-black text-white uppercase mb-5 leading-none"
             style={{ letterSpacing: "-0.02em", textShadow: "0 2px 20px rgba(0,0,0,0.3)" }}
           >
             {t("home.hero.title")}{" "}

@@ -126,7 +126,7 @@ export default function DevisClientPage() {
 
               <div style={{ padding: "24px 28px" }}>
                 {/* Dates */}
-                <div style={{ display: "flex", gap: 32, marginBottom: 24, paddingBottom: 20, borderBottom: "1px solid #f0f4f8" }}>
+                <div style={{ display: "flex", flexWrap: "wrap", gap: 16, marginBottom: 24, paddingBottom: 20, borderBottom: "1px solid #f0f4f8" }}>
                   <div>
                     <div style={{ fontSize: 10, fontWeight: 700, textTransform: "uppercase", color: "#888", letterSpacing: 1, marginBottom: 4 }}>Date d&apos;émission</div>
                     <div style={{ fontSize: 13, fontWeight: 600, color: "#1a1a1a" }}>{fmtDate(devis.date)}</div>
@@ -140,7 +140,8 @@ export default function DevisClientPage() {
                 </div>
 
                 {/* Lignes */}
-                <table style={{ width: "100%", borderCollapse: "collapse", marginBottom: 20 }}>
+                <div style={{ overflowX: "auto", marginBottom: 20 }}>
+                <table style={{ width: "100%", borderCollapse: "collapse", minWidth: 340 }}>
                   <thead>
                     <tr style={{ background: "#0e2d38" }}>
                       <th style={{ padding: "9px 12px", textAlign: "left", fontSize: 11, fontWeight: 700, color: "white", textTransform: "uppercase" }}>Prestation</th>
@@ -158,10 +159,11 @@ export default function DevisClientPage() {
                     ))}
                   </tbody>
                 </table>
+                </div>
 
                 {/* Total */}
                 <div style={{ display: "flex", justifyContent: "flex-end", marginBottom: devis.notes ? 20 : 0 }}>
-                  <div style={{ minWidth: 220 }}>
+                  <div style={{ minWidth: "min(220px, 100%)", width: "100%", maxWidth: 320 }}>
                     <div style={{ display: "flex", justifyContent: "space-between", padding: "10px 14px", background: "#0e2d38", borderRadius: 8, fontSize: 15, fontWeight: 800, color: "white" }}>
                       <span>TOTAL TTC</span>
                       <span>{fmt(devis.total)}</span>
