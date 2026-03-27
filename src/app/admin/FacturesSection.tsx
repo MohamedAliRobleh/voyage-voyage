@@ -84,20 +84,18 @@ export default function FacturesSection() {
   });
 
   useEffect(() => {
-    loadData();
-    const interval = setInterval(loadData, 10000); // refresh toutes les 10s
-    return () => clearInterval(interval);
+    loadData(true);
   }, []);
 
-  const loadData = async () => {
-    setLoading(true);
+  const loadData = async (initial = false) => {
+    if (initial) setLoading(true);
     const [{ data: f }, { data: c }] = await Promise.all([
       supabase.from("factures").select("*").order("created_at", { ascending: false }),
       supabase.from("clients").select("*").order("nom"),
     ]);
     setFactures(f || []);
     setClients(c || []);
-    setLoading(false);
+    if (initial) setLoading(false);
   };
 
   const openForm = (type: "facture" | "devis") => {
