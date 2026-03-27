@@ -6,6 +6,7 @@ import type { Client, Facture, LigneFacture } from "@/lib/supabase";
 import { Plus, Trash2, X, FileText, Check, Send, Eye, TrendingUp, Clock, ArrowRight, BookOpen, ChevronRight, Settings, Upload, Download } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import toast from "react-hot-toast";
+import * as XLSX from "xlsx";
 import DocumentPreview from "./DocumentPreview";
 import CatalogModal from "./CatalogModal";
 
@@ -145,7 +146,6 @@ export default function FacturesSection() {
   };
 
   const downloadTemplate = async () => {
-    const XLSX = (await import("xlsx")).default;
     const headers = [
       "type", "numero", "client_nom", "client_email",
       "date", "date_depart", "date_retour", "echeance", "statut", "notes",
@@ -197,7 +197,6 @@ export default function FacturesSection() {
     setImporting(true);
     setImportResults(null);
     try {
-      const XLSX = (await import("xlsx")).default;
       const buffer = await file.arrayBuffer();
       const wb = XLSX.read(buffer, { type: "array" });
       const ws = wb.Sheets[wb.SheetNames[0]];
