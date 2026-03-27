@@ -113,7 +113,139 @@ export default function PartenairesSection() {
 
   const selectPartenaire = (p: Partenaire | null) => {
     setSelected(p);
-    if (p) window.scrollTo({ top: 0, behavior: "smooth" });
+  };
+
+  const renderDetailContent = (sel: Partenaire) => {
+    const stats = getStats(sel);
+    const color = SITE_COLORS[sel.nom] || "#408398";
+    return (
+      <>
+        {/* Header card */}
+        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
+          <div className="flex items-start justify-between mb-4">
+            <div className="flex items-center gap-3">
+              <div className="w-12 h-12 rounded-2xl flex items-center justify-center" style={{ background: `${color}20` }}>
+                <Building2 size={22} style={{ color }} />
+              </div>
+              <div>
+                <h3 className="text-base font-bold text-gray-900">{sel.nom}</h3>
+                {sel.localisation && <p className="text-xs text-gray-400">{sel.localisation}</p>}
+                <StarRating value={sel.note_performance} />
+              </div>
+            </div>
+            <div className="flex gap-1.5 flex-wrap justify-end">
+              <button onClick={() => openEdit(sel)}
+                className="flex items-center gap-1.5 px-2.5 py-1.5 bg-gray-100 hover:bg-gray-200 rounded-xl text-xs font-semibold text-gray-600 transition-colors">
+                <Edit2 size={12} /> Modifier
+              </button>
+              <button onClick={() => deletePartenaire(sel)}
+                className="flex items-center gap-1.5 px-2.5 py-1.5 bg-red-50 hover:bg-red-100 rounded-xl text-xs font-semibold text-red-500 transition-colors">
+                <X size={12} /> Supprimer
+              </button>
+              <button onClick={() => selectPartenaire(null)}
+                className="p-1.5 hover:bg-gray-100 rounded-xl transition-colors">
+                <X size={15} className="text-gray-400" />
+              </button>
+            </div>
+          </div>
+
+          {/* Contact info */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            {[
+              { icon: Phone, label: "Téléphone", value: sel.telephone || "—" },
+              { icon: Mail, label: "Email", value: sel.email || "—" },
+              { icon: Building2, label: "Contact", value: sel.contact || "—" },
+              { icon: MapPin, label: "Localisation", value: sel.localisation || "—" },
+            ].map((item, i) => (
+              <div key={i} className="flex items-start gap-2.5 bg-gray-50 rounded-xl p-3">
+                <item.icon size={13} className="text-gray-400 mt-0.5 shrink-0" />
+                <div className="min-w-0">
+                  <p className="text-[9px] text-gray-400 uppercase font-bold">{item.label}</p>
+                  <p className="text-xs font-semibold text-gray-700 truncate">{item.value}</p>
+                </div>
+              </div>
+            ))}
+          </div>
+
+          {sel.notes && (
+            <div className="mt-3 bg-amber-50 rounded-xl p-3">
+              <p className="text-[10px] font-bold text-amber-600 uppercase mb-1">Notes</p>
+              <p className="text-xs text-amber-800">{sel.notes}</p>
+            </div>
+          )}
+        </div>
+
+        {/* Financial KPIs */}
+        <div className="grid grid-cols-2 gap-3">
+          {[
+            { label: "CA total généré", value: fmt(stats.totalEncaisse), icon: Wallet, color: "bg-blue-50 text-blue-600" },
+            { label: "Dû au partenaire", value: fmt(stats.totalReverser), icon: ArrowDownCircle, color: "bg-red-50 text-red-500" },
+            { label: "Commission agence", value: fmt(stats.commissionVV), icon: TrendingUp, color: "bg-purple-50 text-purple-600" },
+            { label: "Solde dû", value: fmt(stats.aReverser), icon: AlertTriangle, color: stats.aReverser > 0 ? "bg-red-50 text-red-500" : "bg-green-50 text-green-600" },
+          ].map((k, i) => (
+            <div key={i} className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4 flex items-center gap-3">
+              <div className={`w-9 h-9 rounded-xl flex items-center justify-center ${k.color}`}>
+                <k.icon size={16} />
+              </div>
+              <div>
+                <p className="text-sm font-bold text-gray-900">{k.value}</p>
+                <p className="text-[10px] text-gray-400">{k.label}</p>
+              </div>
+            </div>
+          ))}
+        </div>
+
+        {/* Commission info */}
+        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4 flex items-center justify-between">
+          <div>
+            <p className="text-xs text-gray-400">Commission par défaut</p>
+            <p className="text-2xl font-bold text-gray-900">{sel.commission_defaut}<span className="text-base text-gray-400">%</span></p>
+          </div>
+          <div className="text-right">
+            <p className="text-xs text-gray-400">Commission agence moy.</p>
+            <p className="text-2xl font-bold text-purple-600">
+              {stats.totalEncaisse > 0 ? ((stats.commissionVV / stats.totalEncaisse) * 100).toFixed(1) : "—"}<span className="text-base text-purple-300">%</span>
+            </p>
+          </div>
+        </div>
+
+        {/* Historique reversements */}
+        {stats.rs.length > 0 && (
+          <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+            <div className="px-5 py-3 border-b border-gray-100">
+              <p className="text-xs font-bold text-gray-500 uppercase tracking-wider">Historique des voyages</p>
+            </div>
+            {stats.rs.map((r, i) => (
+              <div key={i} className="flex items-center justify-between px-4 py-3 border-b border-gray-50 last:border-0 gap-2">
+                <div className="min-w-0 flex-1">
+                  <p className="text-sm font-semibold text-gray-800 truncate">{r.client_nom}</p>
+                  <p className="text-[10px] text-gray-400">{r.facture_numero}</p>
+                  <p className="text-[10px] text-red-500 font-bold mt-0.5">{fmt(r.marge)} <span className="font-normal text-gray-400">dû</span></p>
+                </div>
+                <div className="flex items-center gap-2 shrink-0">
+                  <div className="hidden sm:block text-right">
+                    <p className="text-xs font-bold text-gray-700">{fmt(r.total_client)}</p>
+                    <p className="text-[10px] text-gray-400">encaissé</p>
+                  </div>
+                  <span className={`text-[10px] font-bold px-2 py-1 rounded-lg whitespace-nowrap ${
+                    r.statut === "reversé" ? "bg-green-50 text-green-600" : "bg-red-50 text-red-500"
+                  }`}>
+                    {r.statut === "reversé" ? "✓ Reversé" : "En attente"}
+                  </span>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {stats.rs.length === 0 && (
+          <div className="text-center py-8 text-gray-400">
+            <Building2 size={28} className="mx-auto mb-2 opacity-30" />
+            <p className="text-sm">Aucun voyage réalisé avec ce partenaire.</p>
+          </div>
+        )}
+      </>
+    );
   };
 
   const deletePartenaire = async (p: Partenaire) => {
@@ -237,146 +369,38 @@ export default function PartenairesSection() {
         })}
       </div>
 
-      {/* Right — detail panel */}
+      {/* Right — detail panel (desktop only) */}
       <AnimatePresence>
         {selected && (
           <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: 20 }}
-            className="flex-1 min-w-0 space-y-4">
-
-            {/* Detail header */}
-            {(() => {
-              const stats = getStats(selected);
-              const color = SITE_COLORS[selected.nom] || "#408398";
-              return (
-                <>
-                  {/* Header card */}
-                  <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
-                    <div className="flex items-start justify-between mb-4">
-                      <div className="flex items-center gap-3">
-                        <div className="w-12 h-12 rounded-2xl flex items-center justify-center" style={{ background: `${color}20` }}>
-                          <Building2 size={22} style={{ color }} />
-                        </div>
-                        <div>
-                          <h3 className="text-base font-bold text-gray-900">{selected.nom}</h3>
-                          {selected.localisation && <p className="text-xs text-gray-400">{selected.localisation}</p>}
-                          <StarRating value={selected.note_performance} />
-                        </div>
-                      </div>
-                      <div className="flex gap-1.5 flex-wrap justify-end">
-                        <button onClick={() => openEdit(selected)}
-                          className="flex items-center gap-1.5 px-2.5 py-1.5 bg-gray-100 hover:bg-gray-200 rounded-xl text-xs font-semibold text-gray-600 transition-colors">
-                          <Edit2 size={12} /> Modifier
-                        </button>
-                        <button onClick={() => deletePartenaire(selected)}
-                          className="flex items-center gap-1.5 px-2.5 py-1.5 bg-red-50 hover:bg-red-100 rounded-xl text-xs font-semibold text-red-500 transition-colors">
-                          <X size={12} /> Supprimer
-                        </button>
-                        <button onClick={() => selectPartenaire(null)}
-                          className="p-1.5 hover:bg-gray-100 rounded-xl transition-colors">
-                          <X size={15} className="text-gray-400" />
-                        </button>
-                      </div>
-                    </div>
-
-                    {/* Contact info */}
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                      {[
-                        { icon: Phone, label: "Téléphone", value: selected.telephone || "—" },
-                        { icon: Mail, label: "Email", value: selected.email || "—" },
-                        { icon: Building2, label: "Contact", value: selected.contact || "—" },
-                        { icon: MapPin, label: "Localisation", value: selected.localisation || "—" },
-                      ].map((item, i) => (
-                        <div key={i} className="flex items-start gap-2.5 bg-gray-50 rounded-xl p-3">
-                          <item.icon size={13} className="text-gray-400 mt-0.5 shrink-0" />
-                          <div className="min-w-0">
-                            <p className="text-[9px] text-gray-400 uppercase font-bold">{item.label}</p>
-                            <p className="text-xs font-semibold text-gray-700 truncate">{item.value}</p>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-
-                    {selected.notes && (
-                      <div className="mt-3 bg-amber-50 rounded-xl p-3">
-                        <p className="text-[10px] font-bold text-amber-600 uppercase mb-1">Notes</p>
-                        <p className="text-xs text-amber-800">{selected.notes}</p>
-                      </div>
-                    )}
-                  </div>
-
-                  {/* Financial KPIs */}
-                  <div className="grid grid-cols-2 gap-3">
-                    {[
-                      { label: "CA total généré", value: fmt(stats.totalEncaisse), icon: Wallet, color: "bg-blue-50 text-blue-600" },
-                      { label: "Dû au partenaire", value: fmt(stats.totalReverser), icon: ArrowDownCircle, color: "bg-red-50 text-red-500" },
-                      { label: "Commission agence", value: fmt(stats.commissionVV), icon: TrendingUp, color: "bg-purple-50 text-purple-600" },
-                      { label: "Solde dû", value: fmt(stats.aReverser), icon: AlertTriangle, color: stats.aReverser > 0 ? "bg-red-50 text-red-500" : "bg-green-50 text-green-600" },
-                    ].map((k, i) => (
-                      <div key={i} className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4 flex items-center gap-3">
-                        <div className={`w-9 h-9 rounded-xl flex items-center justify-center ${k.color}`}>
-                          <k.icon size={16} />
-                        </div>
-                        <div>
-                          <p className="text-sm font-bold text-gray-900">{k.value}</p>
-                          <p className="text-[10px] text-gray-400">{k.label}</p>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-
-                  {/* Commission info */}
-                  <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4 flex items-center justify-between">
-                    <div>
-                      <p className="text-xs text-gray-400">Commission par défaut</p>
-                      <p className="text-2xl font-bold text-gray-900">{selected.commission_defaut}<span className="text-base text-gray-400">%</span></p>
-                    </div>
-                    <div className="text-right">
-                      <p className="text-xs text-gray-400">Commission agence moy.</p>
-                      <p className="text-2xl font-bold text-purple-600">
-                        {stats.totalEncaisse > 0 ? ((stats.commissionVV / stats.totalEncaisse) * 100).toFixed(1) : "—"}<span className="text-base text-purple-300">%</span>
-                      </p>
-                    </div>
-                  </div>
-
-                  {/* Historique reversements */}
-                  {stats.rs.length > 0 && (
-                    <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
-                      <div className="px-5 py-3 border-b border-gray-100">
-                        <p className="text-xs font-bold text-gray-500 uppercase tracking-wider">Historique des voyages</p>
-                      </div>
-                      {stats.rs.map((r, i) => (
-                        <div key={i} className="flex items-center justify-between px-4 py-3 border-b border-gray-50 last:border-0 gap-2">
-                          <div className="min-w-0 flex-1">
-                            <p className="text-sm font-semibold text-gray-800 truncate">{r.client_nom}</p>
-                            <p className="text-[10px] text-gray-400">{r.facture_numero}</p>
-                            <p className="text-[10px] text-red-500 font-bold mt-0.5">{fmt(r.marge)} <span className="font-normal text-gray-400">dû</span></p>
-                          </div>
-                          <div className="flex items-center gap-2 shrink-0">
-                            <div className="hidden sm:block text-right">
-                              <p className="text-xs font-bold text-gray-700">{fmt(r.total_client)}</p>
-                              <p className="text-[10px] text-gray-400">encaissé</p>
-                            </div>
-                            <span className={`text-[10px] font-bold px-2 py-1 rounded-lg whitespace-nowrap ${
-                              r.statut === "reversé" ? "bg-green-50 text-green-600" : "bg-red-50 text-red-500"
-                            }`}>
-                              {r.statut === "reversé" ? "✓ Reversé" : "En attente"}
-                            </span>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-
-                  {stats.rs.length === 0 && (
-                    <div className="text-center py-8 text-gray-400">
-                      <Building2 size={28} className="mx-auto mb-2 opacity-30" />
-                      <p className="text-sm">Aucun voyage réalisé avec ce partenaire.</p>
-                    </div>
-                  )}
-                </>
-              );
-            })()}
+            className="hidden md:flex flex-col flex-1 min-w-0 space-y-4">
+            {renderDetailContent(selected)}
           </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Mobile bottom sheet */}
+      <AnimatePresence>
+        {selected && (
+          <>
+            <motion.div
+              initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+              className="fixed inset-0 bg-black/40 z-40 md:hidden"
+              onClick={() => selectPartenaire(null)}
+            />
+            <motion.div
+              initial={{ y: "100%" }} animate={{ y: 0 }} exit={{ y: "100%" }}
+              transition={{ type: "spring", damping: 30, stiffness: 300 }}
+              className="fixed bottom-0 left-0 right-0 z-50 bg-gray-50 rounded-t-2xl shadow-2xl max-h-[85vh] overflow-y-auto md:hidden">
+              {/* Handle */}
+              <div className="flex justify-center pt-3 pb-1">
+                <div className="w-10 h-1 bg-gray-300 rounded-full" />
+              </div>
+              <div className="p-4 space-y-4">
+                {renderDetailContent(selected)}
+              </div>
+            </motion.div>
+          </>
         )}
       </AnimatePresence>
 
