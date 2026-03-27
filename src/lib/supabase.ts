@@ -61,6 +61,20 @@ export type Reversement = {
   created_at: string;
 };
 
+export type CatalogFormuleCustom = {
+  id: string;
+  site_id: string;
+  label: string;
+  description: string;
+  type: "par_personne" | "fixe";
+  prix_adulte: number | null;
+  prix_enfant: number | null;
+  age_enfant: string | null;
+  prix_fixe: number | null;
+  note_fixe: string | null;
+  created_at: string;
+};
+
 export type Facture = {
   id: string;
   numero: string;
