@@ -127,7 +127,7 @@ export default function PartenairesSection() {
 
   const saveCreate = async () => {
     if (!createForm.nom.trim()) { toast.error("Le nom est requis"); return; }
-    const { error } = await supabase.from("partenaires").insert({
+    const base = {
       nom: createForm.nom.trim(),
       contact: createForm.contact,
       telephone: createForm.telephone,
@@ -136,8 +136,12 @@ export default function PartenairesSection() {
       commission_defaut: createForm.commission_defaut,
       notes: createForm.notes,
       note_performance: createForm.note_performance,
-      sites: createForm.sites,
-    });
+    };
+    // Try with sites first, fallback without if column doesn't exist
+    let { error } = await supabase.from("partenaires").insert({ ...base, sites: createForm.sites });
+    if (error?.message?.includes("sites")) {
+      ({ error } = await supabase.from("partenaires").insert(base));
+    }
     if (error) { toast.error("Erreur : " + error.message); return; }
     toast.success("Partenaire créé ✓");
     setShowCreate(false);
