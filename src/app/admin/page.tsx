@@ -179,19 +179,20 @@ export default function AdminPage() {
       {/* Tab Navigation */}
       <div className="bg-white border-b border-gray-100 sticky top-0 z-40 shadow-sm">
         <div className="max-w-5xl mx-auto overflow-x-auto scrollbar-hide">
-          <div className="flex gap-0.5 px-2 min-w-max">
+          <div className="flex flex-wrap gap-0 px-2">
             {tabs.map(tab => (
               <button
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id)}
-                className={`flex flex-col sm:flex-row items-center gap-1 sm:gap-2 px-3 sm:px-4 py-2.5 sm:py-3.5 text-xs sm:text-sm font-semibold border-b-2 transition-colors shrink-0 ${
+                className={`flex items-center gap-1.5 px-3 sm:px-4 py-2.5 sm:py-3 text-xs sm:text-sm font-semibold border-b-2 transition-colors whitespace-nowrap ${
                   activeTab === tab.id
                     ? "border-[#408398] text-[#408398]"
                     : "border-transparent text-gray-400 hover:text-gray-600"
                 }`}
               >
                 {tab.icon}
-                <span className="text-[10px] sm:text-sm leading-none">{tab.label}</span>
+                <span className="hidden sm:inline">{tab.label}</span>
+                <span className="sm:hidden text-[9px]">{tab.label}</span>
               </button>
             ))}
           </div>
