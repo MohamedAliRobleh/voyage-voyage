@@ -571,26 +571,26 @@ export default function FacturesSection() {
         </div>
 
         {/* Toolbar */}
-        <div className="flex items-center justify-between gap-3">
+        <div className="flex flex-wrap items-center gap-2">
           <div className="flex bg-gray-100 rounded-xl p-1 gap-0.5">
             {([["all", "Tous"], ["facture", "Factures"], ["devis", "Devis"]] as const).map(([v, l]) => (
               <button key={v} onClick={() => setFilterType(v)}
-                className={`px-3.5 py-1.5 rounded-lg text-xs font-semibold transition-all ${filterType === v ? "bg-white shadow-sm text-gray-900" : "text-gray-400 hover:text-gray-600"}`}>
+                className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${filterType === v ? "bg-white shadow-sm text-gray-900" : "text-gray-400 hover:text-gray-600"}`}>
                 {l}
               </button>
             ))}
           </div>
-          <div className="flex gap-2">
+          <div className="flex gap-1.5 ml-auto flex-wrap">
             <button onClick={() => setShowImportModal(true)}
-              className="flex items-center gap-1.5 px-3.5 py-2 bg-emerald-600 text-white rounded-xl text-xs font-semibold hover:bg-emerald-700 transition-colors">
+              className="flex items-center gap-1.5 px-3 py-2 bg-emerald-600 text-white rounded-xl text-xs font-semibold hover:bg-emerald-700 transition-colors">
               <Upload size={13} /> <span className="hidden sm:inline">Importer Excel</span><span className="sm:hidden">Import</span>
             </button>
             <button onClick={() => openForm("devis")}
-              className="flex items-center gap-1.5 px-3.5 py-2 bg-amber-500 text-white rounded-xl text-xs font-semibold hover:bg-amber-600 transition-colors">
+              className="flex items-center gap-1.5 px-3 py-2 bg-amber-500 text-white rounded-xl text-xs font-semibold hover:bg-amber-600 transition-colors">
               <Plus size={13} /> <span className="hidden sm:inline">Nouveau devis</span><span className="sm:hidden">Devis</span>
             </button>
             <button onClick={() => openForm("facture")}
-              className="flex items-center gap-1.5 px-3.5 py-2 bg-[#0e2d38] text-white rounded-xl text-xs font-semibold hover:bg-[#1a3f50] transition-colors">
+              className="flex items-center gap-1.5 px-3 py-2 bg-[#0e2d38] text-white rounded-xl text-xs font-semibold hover:bg-[#1a3f50] transition-colors">
               <Plus size={13} /> <span className="hidden sm:inline">Nouvelle facture</span><span className="sm:hidden">Facture</span>
             </button>
           </div>

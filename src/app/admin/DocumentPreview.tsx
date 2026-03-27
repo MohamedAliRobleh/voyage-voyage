@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useRef, useState, useEffect } from "react";
 import type { Facture } from "@/lib/supabase";
 import { X, Printer, Send, Check, MessageCircle } from "lucide-react";
 import { motion } from "framer-motion";
@@ -15,9 +15,23 @@ const TVA_RATE = 0; // Djibouti : pas de TVA standard, mettre 0
 
 export default function DocumentPreview({ document: doc, onClose }: Props) {
   const printRef = useRef<HTMLDivElement>(null);
+  const areaRef = useRef<HTMLDivElement>(null);
   const [sending, setSending] = useState(false);
   const [sent, setSent] = useState(false);
   const [generatingPdf, setGeneratingPdf] = useState(false);
+  const [docZoom, setDocZoom] = useState(1);
+
+  useEffect(() => {
+    const calc = () => {
+      if (!areaRef.current) return;
+      const avail = areaRef.current.clientWidth;
+      const docFull = 906; // 794px content + 56px*2 padding
+      setDocZoom(Math.min(1, avail / docFull));
+    };
+    calc();
+    window.addEventListener("resize", calc);
+    return () => window.removeEventListener("resize", calc);
+  }, []);
 
   const handleSendEmail = async () => {
     if (!doc.client_email) {
@@ -241,11 +255,10 @@ export default function DocumentPreview({ document: doc, onClose }: Props) {
         </div>
 
         {/* Document area */}
-        <div className="flex-1 overflow-y-auto p-2 sm:p-6">
-          <div className="overflow-x-auto">
+        <div ref={areaRef} className="flex-1 overflow-y-auto p-2 sm:p-6">
           <div
             className="bg-white shadow-lg rounded-xl mx-auto"
-            style={{ maxWidth: "794px", minWidth: "600px", minHeight: "1123px", padding: "48px 56px", fontFamily: "Arial, Helvetica, sans-serif" }}
+            style={{ width: "794px", minHeight: "1123px", padding: "48px 56px", fontFamily: "Arial, Helvetica, sans-serif", zoom: docZoom, transformOrigin: "top left" }}
           >
             <div ref={printRef}>
               {/* Header coloré */}
@@ -415,7 +428,6 @@ export default function DocumentPreview({ document: doc, onClose }: Props) {
                 </p>
               </div>
             </div>
-          </div>
           </div>
         </div>
       </motion.div>
