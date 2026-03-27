@@ -15,32 +15,27 @@ function localDateStr(d = new Date()) {
 }
 
 const MODELE_STANDARD = `✅ INCLUS
-• Transport aller-retour depuis Djibouti-Ville
 • Hébergement selon formule choisie (sauf formule Journée uniquement)
-• Petit-déjeuner et dîner (déjeuner inclus selon formule choisie)
-• Encadrement par guide local
-• Réduction -10% sur la 2ème nuit (Loubatanleh uniquement)
+• Repas selon formule choisie
 
 ❌ NON INCLUS
-• Boissons et dépenses personnelles
-• Visite Mangrove (Godoria uniquement — 2 000 FDJ/adulte · 1 000 FDJ/enfant)
-• Activités nautiques : snorkeling, plongée (Hougeif et Sables Blancs uniquement)
+• Soft Drinks / Boissons alcoolisées / Dépenses personnelles
+• Toutes choses non mentionnées ci-dessus
 • Assurance voyage
-
-💳 MODALITÉS DE PAIEMENT
-• Paiement en espèces uniquement (FDJ)
-• Acompte de 50% requis pour confirmer la réservation
-• Solde à régler avant le départ
-
-🚫 CONDITIONS D'ANNULATION
-• Annulation gratuite jusqu'à 72h avant le départ
-• Entre 72h et 24h avant le départ : 50% du montant retenu
-• Moins de 24h avant le départ : 100% du montant retenu
 
 📍 INFORMATIONS LOGISTIQUES
 • Rendez-vous : Gabode 5, Zone Stid — Djibouti-Ville
 • Heure de départ : 7h00 (sauf indication contraire)
-• À prévoir : chapeau, crème solaire, eau, chaussures adaptées`;
+• À prévoir : chapeau, crème solaire, eau, chaussures adaptées
+
+🚫 CONDITIONS D'ANNULATION
+• Annulation gratuite jusqu'à 72h avant le départ
+• Entre 72h et 24h avant le départ : 50% du montant retenu
+• Moins de 24h ou non-présentation : 100% du montant dû
+
+💳 MODALITÉS DE PAIEMENT
+• Paiement en espèces uniquement (FDJ)
+• Totalité du montant requise 5 jours avant la sortie`;
 
 const statutConfig = {
   brouillon:      { label: "Brouillon",      bg: "bg-gray-100",    text: "text-gray-500",    dot: "bg-gray-400" },
@@ -667,18 +662,21 @@ export default function FacturesSection() {
                   {/* Notes */}
                   <div>
                     <div className="flex items-center justify-between mb-1.5">
-                      <label className="block text-[10px] font-bold uppercase tracking-wider text-gray-400">Notes</label>
-                      <button
-                        type="button"
-                        onClick={() => setForm({ ...form, notes: MODELE_STANDARD })}
-                        className="text-[10px] font-semibold text-[#408398] hover:text-[#326e80] bg-[#408398]/10 hover:bg-[#408398]/20 px-2.5 py-1 rounded-lg transition-colors"
-                      >
-                        Modèle standard
-                      </button>
+                      <label className="block text-[10px] font-bold uppercase tracking-wider text-gray-400">Notes / Conditions</label>
+                      <div className="flex gap-1.5">
+                        <button type="button" onClick={() => setForm({ ...form, notes: MODELE_STANDARD })}
+                          className="text-[10px] font-semibold text-[#408398] bg-[#408398]/10 hover:bg-[#408398]/20 px-2.5 py-1 rounded-lg transition-colors">
+                          Modèle standard
+                        </button>
+                        <button type="button" onClick={() => setForm({ ...form, notes: "" })}
+                          className="text-[10px] font-semibold text-gray-400 bg-gray-100 hover:bg-gray-200 px-2.5 py-1 rounded-lg transition-colors">
+                          Vider
+                        </button>
+                      </div>
                     </div>
-                    <textarea value={form.notes} onChange={e => setForm({ ...form, notes: e.target.value })} rows={4}
+                    <textarea value={form.notes} onChange={e => setForm({ ...form, notes: e.target.value })} rows={5}
                       className="w-full px-3.5 py-2.5 border border-gray-200 rounded-xl text-sm text-gray-900 focus:outline-none focus:border-[#408398] resize-none font-mono"
-                      placeholder="Inclus dans le prix, conditions spéciales..." />
+                      placeholder="Laisser vide ou cliquer sur Modèle standard..." />
                   </div>
 
                   <div className="flex gap-2.5 pt-1">

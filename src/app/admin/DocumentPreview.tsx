@@ -243,46 +243,45 @@ export default function DocumentPreview({ document: doc, onClose }: Props) {
             style={{ maxWidth: "794px", minHeight: "1123px", padding: "48px 56px", fontFamily: "Arial, Helvetica, sans-serif" }}
           >
             <div ref={printRef}>
-              {/* Header */}
-              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: "32px" }}>
-                <div style={{ display: "flex", alignItems: "center", gap: "14px" }}>
+              {/* Header coloré */}
+              <div style={{ background: "linear-gradient(135deg, #0e2d38 0%, #265868 60%, #408398 100%)", borderRadius: "12px", padding: "24px 32px", marginBottom: "28px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                <div style={{ display: "flex", alignItems: "center", gap: "16px" }}>
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img
                     src="/images/pics/logo/logovoyage.webp"
                     alt="Voyage Voyage"
-                    style={{ width: "56px", height: "56px", borderRadius: "50%", objectFit: "contain" }}
+                    style={{ width: "60px", height: "60px", borderRadius: "50%", objectFit: "contain", background: "white", padding: "4px" }}
                   />
                   <div>
-                    <h1 style={{ fontSize: "17px", fontWeight: 900, color: "#0e2d38", letterSpacing: "2px", textTransform: "uppercase", marginBottom: "4px" }}>
+                    <h1 style={{ fontSize: "18px", fontWeight: 900, color: "white", letterSpacing: "3px", textTransform: "uppercase", marginBottom: "6px" }}>
                       VOYAGE VOYAGE
                     </h1>
-                    <p style={{ fontSize: "11px", color: "#555", lineHeight: "1.6" }}>
+                    <p style={{ fontSize: "10px", color: "rgba(255,255,255,0.7)", lineHeight: "1.7" }}>
                       Agence de Tourisme — Djibouti<br />
-                      Gabode 5 - Zone Stid, Extension Lot 227<br />
-                      Djibouti-Ville, République de Djibouti<br />
-                      📞 +253 77 07 33 77 &nbsp;|&nbsp; 💬 WhatsApp : +253 77 07 33 77<br />
-                      voyagevoyagedjib@gmail.com
+                      Gabode 5, Zone Stid, Extension Lot 227<br />
+                      📞 +253 77 07 33 77 &nbsp;|&nbsp; 💬 +253 77 07 33 77
                     </p>
                   </div>
                 </div>
                 <div style={{ textAlign: "right" }}>
-                  <div style={{ fontSize: "30px", fontWeight: 900, color: isDevis ? "#d97706" : "#408398", textTransform: "uppercase", letterSpacing: "3px" }}>
+                  <div style={{ fontSize: "32px", fontWeight: 900, color: isDevis ? "#fbbf24" : "#7dd3ea", textTransform: "uppercase", letterSpacing: "4px" }}>
                     {isDevis ? "DEVIS" : "FACTURE"}
                   </div>
-                  <div style={{ fontSize: "13px", color: "#555", marginTop: "4px" }}>{doc.numero}</div>
+                  <div style={{ fontSize: "13px", color: "rgba(255,255,255,0.8)", marginTop: "4px", fontWeight: 600 }}>{doc.numero}</div>
+                  <div style={{ fontSize: "11px", color: "rgba(255,255,255,0.5)", marginTop: "2px" }}>voyagevoyagedj.com</div>
                 </div>
               </div>
 
-              {/* Divider */}
-              <hr style={{ border: "none", borderTop: `2px solid ${isDevis ? "#d97706" : "#408398"}`, marginBottom: "24px" }} />
+              {/* Bande colorée sous le header */}
+              <div style={{ height: "4px", background: `linear-gradient(90deg, ${isDevis ? "#d97706" : "#408398"}, ${isDevis ? "#fbbf24" : "#7dd3ea"})`, borderRadius: "2px", marginBottom: "28px" }} />
 
               {/* Meta: client + dates */}
-              <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "32px" }}>
+              <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "28px", background: "#f8fafc", borderRadius: "10px", padding: "20px 24px" }}>
                 <div>
                   <p style={{ fontSize: "10px", fontWeight: 700, textTransform: "uppercase", color: isDevis ? "#d97706" : "#408398", letterSpacing: "1px", marginBottom: "6px" }}>
                     {isDevis ? "Destinataire" : "Facturé à"}
                   </p>
-                  <p style={{ fontSize: "13px", fontWeight: 700, color: "#1a1a1a" }}>{doc.client_nom}</p>
+                  <p style={{ fontSize: "14px", fontWeight: 700, color: "#0e2d38" }}>{doc.client_nom}</p>
                   {doc.client_email && <p style={{ fontSize: "12px", color: "#555" }}>{doc.client_email}</p>}
                 </div>
                 <div style={{ textAlign: "right" }}>
@@ -320,30 +319,30 @@ export default function DocumentPreview({ document: doc, onClose }: Props) {
               </div>
 
               {/* Table */}
-              <table style={{ width: "100%", borderCollapse: "collapse", marginBottom: "24px" }}>
+              <table style={{ width: "100%", borderCollapse: "collapse", marginBottom: "24px", borderRadius: "10px", overflow: "hidden" }}>
                 <thead>
-                  <tr style={{ background: "#0e2d38", color: "white" }}>
-                    <th style={{ padding: "10px 12px", textAlign: "left", fontSize: "11px", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.5px", width: "50%" }}>
+                  <tr style={{ background: `linear-gradient(90deg, #0e2d38, ${isDevis ? "#92400e" : "#265868"})`, color: "white" }}>
+                    <th style={{ padding: "12px 14px", textAlign: "left", fontSize: "11px", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.5px", width: "50%" }}>
                       Description
                     </th>
-                    <th style={{ padding: "10px 12px", textAlign: "center", fontSize: "11px", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.5px" }}>
+                    <th style={{ padding: "12px 14px", textAlign: "center", fontSize: "11px", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.5px" }}>
                       Qté
                     </th>
-                    <th style={{ padding: "10px 12px", textAlign: "right", fontSize: "11px", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.5px" }}>
+                    <th style={{ padding: "12px 14px", textAlign: "right", fontSize: "11px", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.5px" }}>
                       Prix unitaire
                     </th>
-                    <th style={{ padding: "10px 12px", textAlign: "right", fontSize: "11px", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.5px" }}>
+                    <th style={{ padding: "12px 14px", textAlign: "right", fontSize: "11px", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.5px" }}>
                       Montant
                     </th>
                   </tr>
                 </thead>
                 <tbody>
                   {doc.lignes.map((l, i) => (
-                    <tr key={i} style={{ background: i % 2 === 0 ? "white" : "#f5f9fb" }}>
-                      <td style={{ padding: "10px 12px", fontSize: "12px", color: "#333", borderBottom: "1px solid #e8f0f3" }}>{l.description}</td>
-                      <td style={{ padding: "10px 12px", fontSize: "12px", color: "#333", textAlign: "center", borderBottom: "1px solid #e8f0f3" }}>{l.quantite}</td>
-                      <td style={{ padding: "10px 12px", fontSize: "12px", color: "#333", textAlign: "right", borderBottom: "1px solid #e8f0f3" }}>{fmt(l.prix_unitaire)}</td>
-                      <td style={{ padding: "10px 12px", fontSize: "12px", fontWeight: 600, color: "#1a1a1a", textAlign: "right", borderBottom: "1px solid #e8f0f3" }}>{fmt(l.quantite * l.prix_unitaire)}</td>
+                    <tr key={i} style={{ background: i % 2 === 0 ? "white" : "#f0f7f9" }}>
+                      <td style={{ padding: "11px 14px", fontSize: "12px", color: "#1a1a1a", borderBottom: "1px solid #e2eef2", fontWeight: 500 }}>{l.description}</td>
+                      <td style={{ padding: "11px 14px", fontSize: "12px", color: "#555", textAlign: "center", borderBottom: "1px solid #e2eef2" }}>{l.quantite}</td>
+                      <td style={{ padding: "11px 14px", fontSize: "12px", color: "#555", textAlign: "right", borderBottom: "1px solid #e2eef2" }}>{fmt(l.prix_unitaire)}</td>
+                      <td style={{ padding: "11px 14px", fontSize: "12px", fontWeight: 700, color: isDevis ? "#92400e" : "#0e2d38", textAlign: "right", borderBottom: "1px solid #e2eef2" }}>{fmt(l.quantite * l.prix_unitaire)}</td>
                     </tr>
                   ))}
                 </tbody>
@@ -351,8 +350,8 @@ export default function DocumentPreview({ document: doc, onClose }: Props) {
 
               {/* Total */}
               <div style={{ display: "flex", justifyContent: "flex-end", marginBottom: "32px" }}>
-                <div style={{ width: "260px" }}>
-                  <div style={{ display: "flex", justifyContent: "space-between", padding: "10px 12px", fontSize: "15px", fontWeight: 800, background: "#0e2d38", color: "white", borderRadius: "6px" }}>
+                <div style={{ width: "280px" }}>
+                  <div style={{ display: "flex", justifyContent: "space-between", padding: "14px 20px", fontSize: "16px", fontWeight: 900, background: `linear-gradient(135deg, #0e2d38, ${isDevis ? "#92400e" : "#408398"})`, color: "white", borderRadius: "10px", letterSpacing: "1px" }}>
                     <span>TOTAL</span>
                     <span>{fmt(total_ht)}</span>
                   </div>
@@ -402,9 +401,11 @@ export default function DocumentPreview({ document: doc, onClose }: Props) {
               )}
 
               {/* Footer */}
-              <div style={{ borderTop: "1px solid #ddd", paddingTop: "14px", textAlign: "center" }}>
-                <p style={{ fontSize: "10px", color: "#aaa", lineHeight: "1.8" }}>
-                  VOYAGE VOYAGE — Agence de Tourisme — Djibouti-Ville, République de Djibouti<br />
+              <div style={{ background: "linear-gradient(135deg, #0e2d38, #265868)", borderRadius: "10px", padding: "16px 24px", textAlign: "center", marginTop: "8px" }}>
+                <p style={{ fontSize: "10px", color: "rgba(255,255,255,0.9)", lineHeight: "2", margin: 0, fontWeight: 600, letterSpacing: "0.5px" }}>
+                  VOYAGE VOYAGE — Agence de Tourisme — Djibouti-Ville, République de Djibouti
+                </p>
+                <p style={{ fontSize: "10px", color: "rgba(255,255,255,0.6)", lineHeight: "1.8", margin: 0 }}>
                   📞 +253 77 07 33 77 &nbsp;|&nbsp; 💬 WhatsApp : +253 77 07 33 77 &nbsp;|&nbsp; voyagevoyagedjib@gmail.com &nbsp;|&nbsp; voyagevoyagedj.com
                 </p>
               </div>
