@@ -124,17 +124,6 @@ function generateHTML(doc: Facture): string {
         <p style="font-size:12px;color:#555;line-height:1.6;margin:0;">${doc.notes}</p>
       </div>` : ""}
 
-      <!-- Conditions -->
-      <div style="margin-bottom:${isDevis && clientLink ? "24px" : "32px"};padding:14px 16px;background:#fafafa;border-radius:8px;">
-        <p style="font-size:10px;font-weight:700;text-transform:uppercase;color:#888;letter-spacing:1px;margin:0 0 6px;">Conditions</p>
-        <p style="font-size:11px;color:#555;line-height:1.8;margin:0;">
-          ${isDevis
-            ? `Ce devis est valable ${doc.echeance ? `jusqu'au ${formatDate(doc.echeance)}` : "30 jours à compter de sa date d'émission"}. Tout devis accepté constitue un engagement contractuel. Un acompte de 30% sera demandé à la confirmation.`
-            : "Paiement à réception de facture. Tout retard de paiement entraîne des pénalités conformément aux conditions générales de vente."
-          }
-        </p>
-      </div>
-
       ${isDevis && clientLink ? `
       <!-- CTA Block -->
       <div style="text-align:center;margin-bottom:32px;padding:28px 24px;background:linear-gradient(135deg,#f5f9fb,#e8f4f7);border-radius:14px;border:1px solid #d0e8f0;">
