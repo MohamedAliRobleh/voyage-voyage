@@ -26,6 +26,7 @@ export type Client = {
   adresse: string;
   notes: string;
   source: "direct" | "whatsapp" | "site_web" | "reference" | "autre";
+  abonne_marketing: boolean;
   created_at: string;
 };
 

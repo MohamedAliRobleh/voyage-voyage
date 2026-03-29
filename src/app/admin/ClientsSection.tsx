@@ -83,7 +83,7 @@ function fmtDate(d: string): string {
   return new Date(y, m - 1, day).toLocaleDateString("fr-FR", { day: "numeric", month: "short", year: "numeric" });
 }
 
-const emptyForm = { nom: "", email: "", telephone: "", whatsapp: "", adresse: "", notes: "", source: "direct" as Client["source"] };
+const emptyForm = { nom: "", email: "", telephone: "", whatsapp: "", adresse: "", notes: "", source: "direct" as Client["source"], abonne_marketing: false };
 
 type FilterSegment = "tous" | Segment;
 
@@ -169,6 +169,7 @@ export default function ClientsSection() {
       adresse: client.adresse || "",
       notes: client.notes || "",
       source: client.source || "direct",
+      abonne_marketing: client.abonne_marketing || false,
     });
     setShowForm(true);
   };
@@ -400,6 +401,11 @@ export default function ClientsSection() {
                       {sourceLabel(selectedClient.source || "direct")}
                     </span>
                   </div>
+                  <div className="flex items-center gap-2">
+                    <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${selectedClient.abonne_marketing ? "bg-amber-100 text-amber-700" : "bg-gray-100 text-gray-400"}`}>
+                      {selectedClient.abonne_marketing ? "📣 Abonné marketing" : "Sans abonnement"}
+                    </span>
+                  </div>
                 </div>
                 <div className="space-y-2.5">
                   <h4 className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Activité</h4>
@@ -567,6 +573,18 @@ export default function ClientsSection() {
                     <textarea value={form.notes} onChange={e => setForm({ ...form, notes: e.target.value })} rows={3}
                       className="w-full px-3 py-2.5 border border-gray-200 rounded-xl text-sm text-gray-900 focus:outline-none focus:border-[#408398] focus:ring-2 focus:ring-[#408398]/10 resize-none"
                       placeholder="Préférences, allergies, remarques..." />
+                  </div>
+                  <div
+                    onClick={() => setForm({ ...form, abonne_marketing: !form.abonne_marketing })}
+                    className={`flex items-center justify-between px-4 py-3 rounded-xl border cursor-pointer transition-colors ${form.abonne_marketing ? "bg-amber-50 border-amber-300" : "bg-gray-50 border-gray-200"}`}
+                  >
+                    <div>
+                      <p className={`text-xs font-semibold ${form.abonne_marketing ? "text-amber-700" : "text-gray-600"}`}>📣 Abonné aux communications marketing</p>
+                      <p className="text-[10px] text-gray-400 mt-0.5">Recevra les promotions et offres spéciales</p>
+                    </div>
+                    <div className={`w-10 h-5 rounded-full transition-colors relative ${form.abonne_marketing ? "bg-amber-500" : "bg-gray-300"}`}>
+                      <div className={`absolute top-0.5 w-4 h-4 bg-white rounded-full shadow transition-transform ${form.abonne_marketing ? "translate-x-5" : "translate-x-0.5"}`} />
+                    </div>
                   </div>
                   <div className="flex gap-3 pt-2">
                     <button type="button" onClick={() => setShowForm(false)}
