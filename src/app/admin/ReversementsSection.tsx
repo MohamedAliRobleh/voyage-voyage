@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import { supabase } from "@/lib/supabase";
 import type { Facture, Reversement, Partenaire } from "@/lib/supabase";
 import { motion, AnimatePresence } from "framer-motion";
-import { X, TrendingUp, ArrowDownCircle, CheckCircle, Wallet, Building2 } from "lucide-react";
+import { X, TrendingUp, ArrowDownCircle, CheckCircle, Wallet, Building2, Send } from "lucide-react";
 import toast from "react-hot-toast";
 
 const fmt = (n: number) => `${Number(n).toLocaleString("fr-FR")} FDJ`;
@@ -117,6 +117,28 @@ export default function ReversementsSection() {
     toast.success("Voyage clôturé ✓");
     setModal(null);
     loadData();
+  };
+
+  const sendToPartenaire = async (r: Reversement) => {
+    const partenaire = findPartenaireBySite(r.site_nom);
+    if (!partenaire) {
+      toast.error(`Aucun partenaire trouvé pour ${r.site_nom}`);
+      return;
+    }
+    try {
+      const res = await fetch("/api/send-partner-message", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ reversement: r, partenaire }),
+      });
+      const json = await res.json();
+      if (!res.ok) throw new Error(json.error);
+      if (json.emailSent) toast.success(`Email envoyé à ${partenaire.nom} ✓`);
+      else if (!partenaire.email) toast("Aucun email partenaire — WhatsApp uniquement", { icon: "ℹ️" });
+      if (json.waUrl) window.open(json.waUrl, "_blank");
+    } catch {
+      toast.error("Erreur lors de l'envoi au partenaire");
+    }
   };
 
   const toggleStatut = async (r: Reversement) => {
@@ -259,14 +281,20 @@ export default function ReversementsSection() {
                     </div>
                   </div>
                 </div>
-                <button onClick={() => toggleStatut(r)}
-                  className={`text-[10px] font-bold px-2.5 py-1.5 rounded-lg transition-colors shrink-0 ${
-                    r.statut === "reversé"
-                      ? "bg-green-50 text-green-600 hover:bg-green-100"
-                      : "bg-red-50 text-red-500 hover:bg-red-100"
-                  }`}>
-                  {r.statut === "reversé" ? "Reversé ✓" : "À reverser"}
-                </button>
+                <div className="flex flex-col gap-1.5 shrink-0">
+                  <button onClick={() => toggleStatut(r)}
+                    className={`text-[10px] font-bold px-2.5 py-1.5 rounded-lg transition-colors ${
+                      r.statut === "reversé"
+                        ? "bg-green-50 text-green-600 hover:bg-green-100"
+                        : "bg-red-50 text-red-500 hover:bg-red-100"
+                    }`}>
+                    {r.statut === "reversé" ? "Reversé ✓" : "À reverser"}
+                  </button>
+                  <button onClick={() => sendToPartenaire(r)}
+                    className="flex items-center justify-center gap-1 text-[10px] font-bold px-2.5 py-1.5 rounded-lg bg-[#408398]/10 text-[#408398] hover:bg-[#408398]/20 transition-colors">
+                    <Send size={10} /> Partenaire
+                  </button>
+                </div>
               </div>
             ))}
           </div>
