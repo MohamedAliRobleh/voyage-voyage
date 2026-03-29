@@ -60,7 +60,7 @@ function getDaysInMonth(year: number, month: number) {
 
 function getFirstDayOfMonth(year: number, month: number) {
   const day = new Date(year, month, 1).getDay();
-  return day === 0 ? 6 : day - 1; // Monday = 0
+  return (day + 1) % 7; // Saturday = 0
 }
 
 export default function CalendarSection() {
@@ -94,7 +94,7 @@ export default function CalendarSection() {
   };
 
   const monthName = new Date(year, month, 1).toLocaleDateString("fr-FR", { month: "long", year: "numeric" });
-  const DAYS = ["Lun", "Mar", "Mer", "Jeu", "Ven", "Sam", "Dim"];
+  const DAYS = ["Sam", "Dim", "Lun", "Mar", "Mer", "Jeu", "Ven"];
 
   // Upcoming trips (next 30 days)
   const todayStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, "0")}-${String(today.getDate()).padStart(2, "0")}`;
