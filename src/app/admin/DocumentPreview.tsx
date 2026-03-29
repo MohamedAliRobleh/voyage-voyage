@@ -114,71 +114,33 @@ export default function DocumentPreview({ document: doc, onClose }: Props) {
     if (!content) return;
     const win = window.open("", "_blank");
     if (!win) return;
-    win.document.write(`
-      <!DOCTYPE html>
-      <html lang="fr">
-      <head>
-        <meta charset="UTF-8" />
-        <title>${doc.numero}</title>
-        <style>
-          * { margin: 0; padding: 0; box-sizing: border-box; -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; color-adjust: exact !important; }
-          body { font-family: Arial, Helvetica, sans-serif; font-size: 13px; color: #1a1a1a; background: white; }
-          .page { width: 210mm; min-height: 297mm; padding: 18mm 16mm; margin: 0 auto; }
-          .header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 32px; }
-          .company-info h1 { font-size: 18px; font-weight: 900; color: #0e2d38; letter-spacing: 2px; text-transform: uppercase; margin-bottom: 4px; }
-          .company-info p { font-size: 11px; color: #555; line-height: 1.6; }
-          .doc-badge { text-align: right; }
-          .doc-badge .type { font-size: 28px; font-weight: 900; color: #408398; text-transform: uppercase; letter-spacing: 3px; }
-          .doc-badge .numero { font-size: 13px; color: #555; margin-top: 4px; }
-          .divider { border: none; border-top: 2px solid #408398; margin: 20px 0; }
-          .meta { display: flex; justify-content: space-between; margin-bottom: 32px; }
-          .meta-block h3 { font-size: 10px; font-weight: 700; text-transform: uppercase; color: #408398; letter-spacing: 1px; margin-bottom: 6px; }
-          .meta-block p { font-size: 12px; color: #1a1a1a; line-height: 1.7; }
-          .dates { display: flex; gap: 32px; margin-bottom: 32px; }
-          .date-item { }
-          .date-item .label { font-size: 10px; font-weight: 700; text-transform: uppercase; color: #888; letter-spacing: 1px; }
-          .date-item .value { font-size: 13px; font-weight: 600; color: #1a1a1a; margin-top: 2px; }
-          table { width: 100%; border-collapse: collapse; margin-bottom: 24px; }
-          thead tr { background: #0e2d38; color: white; }
-          thead th { padding: 10px 12px; text-align: left; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; }
-          thead th:nth-child(2), thead th:nth-child(3), thead th:nth-child(4) { text-align: center; }
-          thead th:last-child { text-align: right; }
-          tbody tr:nth-child(even) { background: #f5f9fb; }
-          tbody td { padding: 10px 12px; font-size: 12px; color: #333; border-bottom: 1px solid #e8f0f3; }
-          tbody td:nth-child(2), tbody td:nth-child(3) { text-align: center; }
-          tbody td:nth-child(4) { text-align: center; }
-          tbody td:last-child { text-align: right; font-weight: 600; }
-          .totals { display: flex; justify-content: flex-end; margin-bottom: 32px; }
-          .totals-box { width: 260px; }
-          .totals-row { display: flex; justify-content: space-between; padding: 6px 0; font-size: 12px; border-bottom: 1px solid #eee; }
-          .totals-row.total { background: #0e2d38; color: white; padding: 10px 12px; border-radius: 6px; font-size: 15px; font-weight: 800; margin-top: 8px; border-bottom: none; }
-          .notes-section { margin-bottom: 32px; }
-          .notes-section h3 { font-size: 10px; font-weight: 700; text-transform: uppercase; color: #408398; letter-spacing: 1px; margin-bottom: 6px; }
-          .notes-section p { font-size: 11px; color: #555; line-height: 1.6; background: #f5f9fb; padding: 10px 12px; border-radius: 6px; border-left: 3px solid #408398; }
-          .conditions { margin-bottom: 32px; }
-          .conditions h3 { font-size: 10px; font-weight: 700; text-transform: uppercase; color: #408398; letter-spacing: 1px; margin-bottom: 6px; }
-          .conditions p { font-size: 11px; color: #555; line-height: 1.6; }
-          .footer { border-top: 1px solid #ddd; padding-top: 14px; text-align: center; }
-          .footer p { font-size: 10px; color: #888; line-height: 1.8; }
-          .logo-area { display: flex; align-items: center; gap: 12px; }
-          .logo-area img { width: 52px; height: 52px; border-radius: 50%; object-fit: contain; }
-          @media print {
-            * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; color-adjust: exact !important; }
-            body { margin: 0; }
-            .page { padding: 12mm 14mm; }
-          }
-        </style>
-      </head>
-      <body>
-        <div class="page">
-          ${content.innerHTML}
-        </div>
-      </body>
-      </html>
-    `);
+    win.document.write(`<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8"/>
+  <base href="${window.location.origin}/"/>
+  <title>${doc.numero}</title>
+  <style>
+    * { margin:0; padding:0; box-sizing:border-box; -webkit-print-color-adjust:exact!important; print-color-adjust:exact!important; color-adjust:exact!important; }
+    html, body { font-family:Arial,Helvetica,sans-serif; font-size:13px; color:#1a1a1a; background:white; }
+    @page { size:A4 portrait; margin:14mm 16mm; }
+    @media print { * { -webkit-print-color-adjust:exact!important; print-color-adjust:exact!important; color-adjust:exact!important; } }
+  </style>
+</head>
+<body>
+${content.innerHTML}
+</body>
+</html>`);
     win.document.close();
-    win.focus();
-    setTimeout(() => { win.print(); }, 500);
+    let printed = false;
+    const doPrint = () => {
+      if (printed) return;
+      printed = true;
+      win.focus();
+      win.print();
+    };
+    win.onload = doPrint;
+    setTimeout(doPrint, 1000);
   };
 
   const fmt = (n: number) => `${Number(n).toLocaleString("fr-FR")} DJF`;
