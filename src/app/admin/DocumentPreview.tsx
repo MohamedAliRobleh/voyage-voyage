@@ -377,22 +377,20 @@ export default function DocumentPreview({ document: doc, onClose }: Props) {
                 </p>
               </div>
 
-              {/* Signature zone for devis */}
-              {isDevis && (
-                <div style={{ display: "flex", gap: "32px", marginBottom: "32px" }}>
-                  <div style={{ flex: 1, border: "1px solid #ddd", borderRadius: "8px", padding: "16px 20px", minHeight: "80px" }}>
-                    <p style={{ fontSize: "10px", fontWeight: 700, textTransform: "uppercase", color: "#888", letterSpacing: "1px", marginBottom: "4px" }}>
-                      Bon pour accord — Signature client
-                    </p>
-                    <p style={{ fontSize: "10px", color: "#aaa" }}>Date : _____ / _____ / _______</p>
-                  </div>
-                  <div style={{ flex: 1, border: "1px solid #ddd", borderRadius: "8px", padding: "16px 20px", minHeight: "80px" }}>
-                    <p style={{ fontSize: "10px", fontWeight: 700, textTransform: "uppercase", color: "#888", letterSpacing: "1px", marginBottom: "4px" }}>
-                      Cachet & Signature — Voyage Voyage
-                    </p>
-                  </div>
+              {/* Signature & cachet */}
+              <div style={{ display: "flex", gap: "32px", marginBottom: "32px" }}>
+                <div style={{ flex: 1, border: "1px solid #ddd", borderRadius: "8px", padding: "16px 20px", minHeight: "90px" }}>
+                  <p style={{ fontSize: "10px", fontWeight: 700, textTransform: "uppercase", color: "#888", letterSpacing: "1px", marginBottom: "4px" }}>
+                    {isDevis ? "Bon pour accord — Signature client" : "Signature client"}
+                  </p>
+                  <p style={{ fontSize: "10px", color: "#aaa" }}>Date : _____ / _____ / _______</p>
                 </div>
-              )}
+                <div style={{ flex: 1, border: "1px solid #ddd", borderRadius: "8px", padding: "16px 20px", minHeight: "90px" }}>
+                  <p style={{ fontSize: "10px", fontWeight: 700, textTransform: "uppercase", color: "#888", letterSpacing: "1px", marginBottom: "4px" }}>
+                    Cachet & Signature — Voyage Voyage
+                  </p>
+                </div>
+              </div>
 
               {/* Footer */}
               <div style={{ background: "linear-gradient(135deg, #0e2d38, #265868)", borderRadius: "10px", padding: "16px 24px", textAlign: "center", marginTop: "8px" }}>
