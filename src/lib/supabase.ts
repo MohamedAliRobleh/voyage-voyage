@@ -77,6 +77,7 @@ export type CatalogFormuleCustom = {
   age_enfant: string | null;
   prix_fixe: number | null;
   note_fixe: string | null;
+  label_quantite: string | null;
   created_at: string;
 };
 

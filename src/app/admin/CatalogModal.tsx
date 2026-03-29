@@ -24,6 +24,7 @@ const emptyDraft = () => ({
   prix_enfant: "" as string | number,
   prix_fixe: "" as string | number,
   note_fixe: "",
+  label_quantite: "",
 });
 
 export default function CatalogModal({ onAdd, onClose }: Props) {
@@ -42,7 +43,7 @@ export default function CatalogModal({ onAdd, onClose }: Props) {
 
   const site = catalog.find(s => s.id === siteId)!;
 
-  const customForSite: CatalogFormule[] = customFormules
+  const customForSite: (CatalogFormule & { labelQuantite?: string })[] = customFormules
     .filter(c => c.site_id === siteId)
     .map(c => ({
       id: c.id,
@@ -53,9 +54,10 @@ export default function CatalogModal({ onAdd, onClose }: Props) {
       prixEnfant: c.prix_enfant ?? undefined,
       prixFixe: c.prix_fixe ?? undefined,
       noteFixe: c.note_fixe ?? undefined,
+      labelQuantite: c.label_quantite ?? undefined,
     }));
 
-  const allFormules = [...site.formules, ...customForSite];
+  const allFormules: (CatalogFormule & { labelQuantite?: string })[] = [...site.formules, ...customForSite];
 
   const getQty = (id: string) => qty[id] ?? { adultes: 1, enfants: 0, fixe: 1 };
 
@@ -76,8 +78,9 @@ export default function CatalogModal({ onAdd, onClose }: Props) {
         total: q.fixe * formule.prixFixe!,
       });
     } else {
+      const labelQte = (formule as CatalogFormule & { labelQuantite?: string }).labelQuantite || "Adulte";
       if (q.adultes > 0) lignes.push({
-        description: `${site.nom} — ${formule.label} · Adulte${formule.description ? ` (${formule.description})` : ""}`,
+        description: `${site.nom} — ${formule.label} · ${labelQte}${formule.description ? ` (${formule.description})` : ""}`,
         quantite: q.adultes,
         prix_unitaire: formule.prixAdulte!,
         total: q.adultes * formule.prixAdulte!,
@@ -107,6 +110,7 @@ export default function CatalogModal({ onAdd, onClose }: Props) {
       prix_enfant: draft.type === "par_personne" && draft.prix_enfant !== "" ? Number(draft.prix_enfant) : null,
       prix_fixe: draft.type === "fixe" && draft.prix_fixe !== "" ? Number(draft.prix_fixe) : null,
       note_fixe: draft.note_fixe || null,
+      label_quantite: draft.type === "par_personne" && draft.label_quantite ? draft.label_quantite : null,
       age_enfant: null,
     };
     const { data, error } = await supabase.from("catalog_formules_custom").insert(row).select().single();
@@ -212,7 +216,7 @@ export default function CatalogModal({ onAdd, onClose }: Props) {
                       {formule.type === "par_personne" ? (
                         <>
                           <div className="flex items-center gap-2">
-                            <span className="text-[11px] font-semibold text-gray-500 w-14">Adultes</span>
+                            <span className="text-[11px] font-semibold text-gray-500 w-14">{(formule as CatalogFormule & { labelQuantite?: string }).labelQuantite || "Adultes"}</span>
                             <div className="flex items-center border border-gray-200 rounded-lg overflow-hidden bg-white">
                               <button type="button" onClick={() => setField(formule.id, "adultes", q.adultes - 1)} className="px-2.5 py-1.5 text-gray-400 hover:bg-gray-100 text-sm font-bold transition-colors">−</button>
                               <span className="px-3 py-1.5 text-sm font-bold text-gray-900 min-w-[2rem] text-center">{q.adultes}</span>
@@ -305,8 +309,14 @@ export default function CatalogModal({ onAdd, onClose }: Props) {
 
                           {draft.type === "par_personne" ? (
                             <>
+                              <div className="col-span-2">
+                                <label className="text-[11px] font-semibold text-gray-500 uppercase tracking-wide">Label de quantité</label>
+                                <input type="text" value={draft.label_quantite} onChange={e => setDraft(d => ({ ...d, label_quantite: e.target.value }))}
+                                  placeholder="Ex: Nombre de jours, Adultes, Personnes..."
+                                  className="mt-1 w-full px-3 py-2 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-amber-300" />
+                              </div>
                               <div>
-                                <label className="text-[11px] font-semibold text-gray-500 uppercase tracking-wide">Prix adulte (FDJ) *</label>
+                                <label className="text-[11px] font-semibold text-gray-500 uppercase tracking-wide">Prix unitaire (FDJ) *</label>
                                 <input type="number" min={0} value={draft.prix_adulte} onChange={e => setDraft(d => ({ ...d, prix_adulte: e.target.value }))}
                                   placeholder="0"
                                   className="mt-1 w-full px-3 py-2 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-amber-300" />
