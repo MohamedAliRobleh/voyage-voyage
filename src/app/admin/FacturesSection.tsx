@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { supabase } from "@/lib/supabase";
 import type { Client, Facture, LigneFacture } from "@/lib/supabase";
-import { Plus, Trash2, X, FileText, Check, Send, Eye, TrendingUp, Clock, ArrowRight, BookOpen, ChevronRight, Settings, Upload, Download, Edit2 } from "lucide-react";
+import { Plus, Trash2, X, FileText, Check, Send, Eye, TrendingUp, Clock, ArrowRight, BookOpen, ChevronRight, Settings, Upload, Download, Edit2, MessageCircle, Star } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import toast from "react-hot-toast";
 import * as XLSX from "xlsx";
@@ -103,6 +103,7 @@ export default function FacturesSection() {
   const [filterType, setFilterType] = useState<"all" | "facture" | "devis">("all");
   const [showCatalog, setShowCatalog] = useState(false);
   const [editingDoc, setEditingDoc] = useState<Facture | null>(null);
+  const [sendingMsg, setSendingMsg] = useState<string | null>(null);
   const [importing, setImporting] = useState(false);
   const [showImportModal, setShowImportModal] = useState(false);
   const [importResults, setImportResults] = useState<{ ok: number; errors: string[] } | null>(null);
@@ -449,6 +450,45 @@ export default function FacturesSection() {
   const totalEnAttente = factures.filter(f => f.statut !== "payé").reduce((s, f) => s + f.total, 0);
 
   // Detail panel inner content — shared between bottom sheet and desktop side panel
+  const sendClientMessage = async (doc: Facture, type: "payment_confirmation" | "return_message") => {
+    setSendingMsg(type);
+    try {
+      // Récupérer le whatsapp du client
+      let clientWhatsapp: string | null = null;
+      if (doc.client_id) {
+        const { data } = await supabase.from("clients").select("whatsapp, telephone").eq("id", doc.client_id).single();
+        clientWhatsapp = data?.whatsapp || data?.telephone || null;
+      }
+
+      const res = await fetch("/api/send-client-message", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ type, doc, clientWhatsapp }),
+      });
+      const json = await res.json();
+      if (!res.ok) throw new Error(json.error);
+
+      // Email
+      if (json.emailSent) {
+        toast.success(`Email envoyé à ${doc.client_email} ✓`);
+      } else if (!doc.client_email) {
+        toast("Aucun email client — message WhatsApp uniquement", { icon: "ℹ️" });
+      }
+
+      // WhatsApp
+      if (json.whatsappText) {
+        const number = (json.whatsappNumber || "").replace(/\D/g, "");
+        const url = number
+          ? `https://wa.me/${number}?text=${encodeURIComponent(json.whatsappText)}`
+          : `https://wa.me/?text=${encodeURIComponent(json.whatsappText)}`;
+        window.open(url, "_blank");
+      }
+    } catch {
+      toast.error("Erreur lors de l'envoi du message");
+    }
+    setSendingMsg(null);
+  };
+
   const DetailPanelContent = ({ doc }: { doc: Facture }) => (
     <>
       {/* Panel header */}
@@ -573,6 +613,30 @@ export default function FacturesSection() {
             className="flex items-center justify-center gap-2 py-2.5 bg-[#408398] text-white rounded-xl text-xs font-semibold hover:bg-[#326e80] transition-colors">
             <Eye size={13} /> Aperçu & Envoi
           </button>
+          {doc.type === "facture" && doc.statut === "payé" && (
+            <button
+              onClick={() => sendClientMessage(doc, "payment_confirmation")}
+              disabled={sendingMsg === "payment_confirmation"}
+              className="flex items-center justify-center gap-2 py-2.5 bg-teal-500 text-white rounded-xl text-xs font-semibold hover:bg-teal-600 transition-colors disabled:opacity-60"
+            >
+              {sendingMsg === "payment_confirmation"
+                ? <div className="w-3 h-3 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                : <Check size={13} />}
+              Confirmation paiement
+            </button>
+          )}
+          {doc.type === "facture" && doc.date_retour && (
+            <button
+              onClick={() => sendClientMessage(doc, "return_message")}
+              disabled={sendingMsg === "return_message"}
+              className="flex items-center justify-center gap-2 py-2.5 bg-amber-500 text-white rounded-xl text-xs font-semibold hover:bg-amber-600 transition-colors disabled:opacity-60"
+            >
+              {sendingMsg === "return_message"
+                ? <div className="w-3 h-3 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                : <Star size={13} />}
+              Message retour + Avis
+            </button>
+          )}
           <button onClick={() => openEdit(doc)}
             className="flex items-center justify-center gap-2 py-2.5 bg-gray-100 text-gray-700 rounded-xl text-xs font-semibold hover:bg-gray-200 transition-colors">
             <Edit2 size={13} /> Modifier le document
