@@ -112,33 +112,31 @@ export default function DocumentPreview({ document: doc, onClose }: Props) {
   const handlePrint = () => {
     const content = printRef.current;
     if (!content) return;
-    const win = window.open("", "_blank");
-    if (!win) { toast.error("Popup bloqué — autorisez les popups pour ce site"); return; }
-    win.document.write(`<!DOCTYPE html>
-<html lang="fr">
-<head>
-  <meta charset="UTF-8"/>
-  <base href="${window.location.origin}/"/>
-  <title>${doc.numero}</title>
-  <style>
-    html, body { margin:0; padding:0; font-family:Arial,Helvetica,sans-serif; font-size:13px; color:#1a1a1a; background:white; -webkit-print-color-adjust:exact!important; print-color-adjust:exact!important; }
-    * { box-sizing:border-box; -webkit-print-color-adjust:exact!important; print-color-adjust:exact!important; color-adjust:exact!important; }
-    @page { size:A4 portrait; margin:14mm 16mm; }
-    @media print { html,body { -webkit-print-color-adjust:exact!important; print-color-adjust:exact!important; } }
-  </style>
-</head>
-<body>${content.innerHTML}</body>
-</html>`);
-    win.document.close();
-    let printed = false;
-    const doPrint = () => {
-      if (printed) return;
-      printed = true;
-      win.focus();
-      win.print();
-    };
-    win.onload = doPrint;
-    setTimeout(doPrint, 1200);
+
+    // Injecter le contenu + styles d'impression dans la page courante
+    const printRoot = document.createElement("div");
+    printRoot.id = "vv-print-root";
+    printRoot.innerHTML = content.innerHTML;
+
+    const style = document.createElement("style");
+    style.id = "vv-print-style";
+    style.innerHTML = `
+      @media screen { #vv-print-root { display: none; } }
+      @media print {
+        body > *:not(#vv-print-root) { display: none !important; }
+        #vv-print-root { display: block !important; font-family: Arial, Helvetica, sans-serif; font-size: 13px; color: #1a1a1a; }
+        * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; color-adjust: exact !important; }
+        @page { size: A4 portrait; margin: 14mm 16mm; }
+      }
+    `;
+
+    document.head.appendChild(style);
+    document.body.appendChild(printRoot);
+
+    window.print();
+
+    document.head.removeChild(style);
+    document.body.removeChild(printRoot);
   };
 
   const fmt = (n: number) => `${Number(n).toLocaleString("fr-FR")} DJF`;
