@@ -5,7 +5,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import {
   Lock, LayoutDashboard, Calendar, Building2,
   Users, FileText, TrendingUp, Eye, EyeOff, LogOut,
-  Wallet, ClipboardList, BarChart2, FileDown, Star,
+  Wallet, ClipboardList, BarChart2, FileDown, Star, Megaphone,
 } from "lucide-react";
 import ClientsSection from "./ClientsSection";
 import FacturesSection from "./FacturesSection";
@@ -18,9 +18,10 @@ import OperationsSection from "./OperationsSection";
 import AnalyticsSection from "./AnalyticsSection";
 import RapportsSection from "./RapportsSection";
 import ReputationSection from "./ReputationSection";
+import MessagesSection from "./MessagesSection";
 import { supabase } from "@/lib/supabase";
 
-type Tab = "dashboard" | "clients" | "factures" | "reversements" | "calendrier" | "partenaires" | "tresorerie" | "operations" | "analytics" | "rapports" | "reputation";
+type Tab = "dashboard" | "clients" | "factures" | "reversements" | "calendrier" | "partenaires" | "tresorerie" | "operations" | "analytics" | "rapports" | "reputation" | "messages";
 
 export default function AdminPage() {
   const [authenticated, setAuthenticated] = useState(false);
@@ -153,6 +154,7 @@ export default function AdminPage() {
     { id: "analytics", label: "Analytics", icon: <BarChart2 size={15} /> },
     { id: "rapports", label: "Rapports", icon: <FileDown size={15} /> },
     { id: "reputation", label: "Réputation", icon: <Star size={15} /> },
+    { id: "messages",   label: "Messages",   icon: <Megaphone size={15} /> },
   ];
 
   return (
@@ -212,6 +214,7 @@ export default function AdminPage() {
         <div className={activeTab === "analytics" ? "" : "hidden"}><AnalyticsSection /></div>
         <div className={activeTab === "rapports" ? "" : "hidden"}><RapportsSection /></div>
         <div className={activeTab === "reputation" ? "" : "hidden"}><ReputationSection /></div>
+        <div className={activeTab === "messages" ? "" : "hidden"}><MessagesSection /></div>
 
       </div>
     </div>
