@@ -118,19 +118,12 @@ export default function DocumentPreview({ document: doc, onClose }: Props) {
       const html2pdf = (await import("html2pdf.js")).default;
 
       const wrapper = document.createElement("div");
-      wrapper.style.cssText = "font-family:Arial,Helvetica,sans-serif;font-size:13px;color:#1a1a1a;background:white;width:794px;";
+      wrapper.style.cssText = "position:absolute;left:-9999px;top:0;font-family:Arial,Helvetica,sans-serif;font-size:13px;color:#1a1a1a;background:white;padding:14mm 16mm;width:210mm;";
       wrapper.innerHTML = content.innerHTML;
-
-      // Fix relative image URLs
-      wrapper.querySelectorAll("img").forEach(img => {
-        const src = img.getAttribute("src");
-        if (src && src.startsWith("/")) img.src = window.location.origin + src;
-      });
-
       document.body.appendChild(wrapper);
 
       const opt = {
-        margin: [12, 14, 12, 14],
+        margin: 0,
         filename: `${doc.numero}.pdf`,
         image: { type: "jpeg", quality: 0.98 },
         html2canvas: { scale: 2, useCORS: true, logging: false, allowTaint: true },
