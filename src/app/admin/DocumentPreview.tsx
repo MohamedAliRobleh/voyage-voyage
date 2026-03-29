@@ -118,7 +118,7 @@ export default function DocumentPreview({ document: doc, onClose }: Props) {
       const html2pdf = (await import("html2pdf.js")).default;
 
       const wrapper = document.createElement("div");
-      wrapper.style.cssText = "position:absolute;left:-9999px;top:0;font-family:Arial,Helvetica,sans-serif;font-size:13px;color:#1a1a1a;background:white;padding:14mm 16mm;width:210mm;";
+      wrapper.style.cssText = "font-family:Arial,Helvetica,sans-serif;font-size:13px;color:#1a1a1a;background:white;padding:14mm 16mm;width:210mm;";
       wrapper.innerHTML = content.innerHTML;
       document.body.appendChild(wrapper);
 
