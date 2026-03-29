@@ -83,7 +83,7 @@ function fmtDate(d: string): string {
   return new Date(y, m - 1, day).toLocaleDateString("fr-FR", { day: "numeric", month: "short", year: "numeric" });
 }
 
-const emptyForm = { nom: "", email: "", telephone: "", adresse: "", notes: "", source: "direct" as Client["source"] };
+const emptyForm = { nom: "", email: "", telephone: "", whatsapp: "", adresse: "", notes: "", source: "direct" as Client["source"] };
 
 type FilterSegment = "tous" | Segment;
 
@@ -144,7 +144,8 @@ export default function ClientsSection() {
     return clients.filter(c => {
       const matchSearch = c.nom.toLowerCase().includes(search.toLowerCase()) ||
         (c.email || "").toLowerCase().includes(search.toLowerCase()) ||
-        (c.telephone || "").includes(search);
+        (c.telephone || "").includes(search) ||
+        (c.whatsapp || "").includes(search);
       const seg = clientStats[c.id]?.segment;
       const matchSeg = filterSegment === "tous" || seg === filterSegment;
       return matchSearch && matchSeg;
@@ -164,6 +165,7 @@ export default function ClientsSection() {
       nom: client.nom,
       email: client.email || "",
       telephone: client.telephone || "",
+      whatsapp: client.whatsapp || "",
       adresse: client.adresse || "",
       notes: client.notes || "",
       source: client.source || "direct",
@@ -297,6 +299,7 @@ export default function ClientsSection() {
                     </div>
                     <div className="flex items-center gap-3 mt-0.5 flex-wrap">
                       {client.telephone && <span className="text-xs text-gray-400 flex items-center gap-1"><Phone size={10} />{client.telephone}</span>}
+                      {client.whatsapp && <span className="text-xs text-green-600 flex items-center gap-1"><MessageCircle size={10} />{client.whatsapp}</span>}
                       {client.email && <span className="text-xs text-gray-400 truncate">{client.email}</span>}
                       <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-medium ${SOURCE_COLORS[src]}`}>{sourceLabel(src)}</span>
                     </div>
@@ -365,6 +368,18 @@ export default function ClientsSection() {
                     <div className="flex items-center gap-2">
                       <Phone size={13} className="text-[#408398] shrink-0" />
                       <span className="text-sm text-gray-700">{selectedClient.telephone}</span>
+                    </div>
+                  )}
+                  {selectedClient.whatsapp && (
+                    <div className="flex items-center gap-2">
+                      <MessageCircle size={13} className="text-green-500 shrink-0" />
+                      <a
+                        href={`https://wa.me/${selectedClient.whatsapp.replace(/[\s\-+]/g, "")}`}
+                        target="_blank" rel="noopener noreferrer"
+                        className="text-sm text-green-600 font-medium hover:underline"
+                      >
+                        {selectedClient.whatsapp}
+                      </a>
                     </div>
                   )}
                   {selectedClient.email && (
@@ -521,6 +536,14 @@ export default function ClientsSection() {
                         className="w-full px-3 py-2.5 border border-gray-200 rounded-xl text-sm text-gray-900 focus:outline-none focus:border-[#408398] focus:ring-2 focus:ring-[#408398]/10"
                         placeholder="+253 77..." />
                     </div>
+                  </div>
+                  <div>
+                    <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1.5 flex items-center gap-1.5">
+                      <MessageCircle size={12} className="text-green-500" /> WhatsApp
+                    </label>
+                    <input value={form.whatsapp} onChange={e => setForm({ ...form, whatsapp: e.target.value })}
+                      className="w-full px-3 py-2.5 border border-gray-200 rounded-xl text-sm text-gray-900 focus:outline-none focus:border-green-400 focus:ring-2 focus:ring-green-400/10"
+                      placeholder="+253 77..." />
                   </div>
                   <div>
                     <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1.5">Adresse</label>

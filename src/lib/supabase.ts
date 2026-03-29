@@ -22,6 +22,7 @@ export type Client = {
   nom: string;
   email: string;
   telephone: string;
+  whatsapp: string;
   adresse: string;
   notes: string;
   source: "direct" | "whatsapp" | "site_web" | "reference" | "autre";
