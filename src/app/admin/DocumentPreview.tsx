@@ -364,6 +364,16 @@ export default function DocumentPreview({ document: doc, onClose }: Props) {
                 </p>
               </div>
 
+              {/* Droit à l'image */}
+              <div style={{ marginBottom: "28px", background: "#f8fafc", border: "1px solid #e2eef2", borderLeft: "3px solid #408398", borderRadius: "8px", padding: "12px 16px" }}>
+                <p style={{ fontSize: "10px", fontWeight: 700, textTransform: "uppercase", color: "#408398", letterSpacing: "1px", marginBottom: "5px" }}>
+                  📷 Droit à l&apos;image
+                </p>
+                <p style={{ fontSize: "10.5px", color: "#555", lineHeight: "1.7", margin: 0 }}>
+                  Voyage Voyage informe le client qu&apos;un photographe ou vidéaste peut être présent durant le séjour à des fins de communication et de promotion. Sauf opposition écrite du client avant le début du séjour via WhatsApp au <strong style={{ color: "#1a1a1a" }}>+253 77 07 33 77</strong>, celui-ci consent à l&apos;utilisation de son image par Voyage Voyage.
+                </p>
+              </div>
+
               {/* Signature & cachet */}
               <div style={{ display: "flex", gap: "32px", marginBottom: "32px" }}>
                 <div style={{ flex: 1, border: "1px solid #ddd", borderRadius: "8px", padding: "16px 20px", minHeight: "90px" }}>
