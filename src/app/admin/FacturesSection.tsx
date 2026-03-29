@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { supabase } from "@/lib/supabase";
 import type { Client, Facture, LigneFacture } from "@/lib/supabase";
-import { Plus, Trash2, X, FileText, Check, Send, Eye, TrendingUp, Clock, ArrowRight, BookOpen, ChevronRight, Settings, Upload, Download } from "lucide-react";
+import { Plus, Trash2, X, FileText, Check, Send, Eye, TrendingUp, Clock, ArrowRight, BookOpen, ChevronRight, Settings, Upload, Download, Edit2 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import toast from "react-hot-toast";
 import * as XLSX from "xlsx";
@@ -102,6 +102,7 @@ export default function FacturesSection() {
   const [previewDoc, setPreviewDoc] = useState<Facture | null>(null);
   const [filterType, setFilterType] = useState<"all" | "facture" | "devis">("all");
   const [showCatalog, setShowCatalog] = useState(false);
+  const [editingDoc, setEditingDoc] = useState<Facture | null>(null);
   const [importing, setImporting] = useState(false);
   const [showImportModal, setShowImportModal] = useState(false);
   const [importResults, setImportResults] = useState<{ ok: number; errors: string[] } | null>(null);
@@ -320,8 +321,27 @@ export default function FacturesSection() {
   };
 
   const openForm = (type: "facture" | "devis") => {
+    setEditingDoc(null);
     setFormType(type);
     setForm({ client_id: "", client_nom: "", client_email: "", date: localDateStr(), date_depart: "", date_retour: "", echeance: "", notes: "", lignes: [{ ...emptyLigne }] });
+    setShowForm(true);
+  };
+
+  const openEdit = (doc: Facture) => {
+    setEditingDoc(doc);
+    setFormType(doc.type);
+    setForm({
+      client_id: doc.client_id || "",
+      client_nom: doc.client_nom,
+      client_email: doc.client_email || "",
+      date: doc.date,
+      date_depart: doc.date_depart || "",
+      date_retour: doc.date_retour || "",
+      echeance: doc.echeance || "",
+      notes: doc.notes || "",
+      lignes: doc.lignes.length > 0 ? doc.lignes : [{ ...emptyLigne }],
+    });
+    setSelected(null);
     setShowForm(true);
   };
 
@@ -340,22 +360,39 @@ export default function FacturesSection() {
     if (!form.client_nom) { toast.error("Sélectionnez ou entrez un client"); return; }
     const lignesValides = form.lignes.filter(l => l.description.trim());
     if (lignesValides.length === 0) { toast.error("Ajoutez au moins une prestation"); return; }
-    const numero = generateNumero(factures, formType);
     const total = totalLignes(lignesValides);
-    const token = crypto.randomUUID();
-    const { error } = await supabase.from("factures").insert({
-      numero, type: formType,
-      client_id: form.client_id || null,
-      client_nom: form.client_nom, client_email: form.client_email,
-      date: form.date, echeance: form.echeance || null,
-      statut: "brouillon", lignes: lignesValides, total, notes: form.notes,
-      date_depart: form.date_depart || null,
-      date_retour: form.date_retour || null,
-      token,
-    });
-    if (error) { toast.error("Erreur lors de la création"); return; }
-    toast.success(`${formType === "devis" ? "Devis" : "Facture"} ${numero} créé(e)`);
+
+    if (editingDoc) {
+      // Modification d'un document existant
+      const { error } = await supabase.from("factures").update({
+        client_id: form.client_id || null,
+        client_nom: form.client_nom, client_email: form.client_email,
+        date: form.date, echeance: form.echeance || null,
+        lignes: lignesValides, total, notes: form.notes,
+        date_depart: form.date_depart || null,
+        date_retour: form.date_retour || null,
+      }).eq("id", editingDoc.id);
+      if (error) { toast.error("Erreur lors de la modification"); return; }
+      toast.success(`${formType === "devis" ? "Devis" : "Facture"} ${editingDoc.numero} modifié(e) ✓`);
+    } else {
+      // Création d'un nouveau document
+      const numero = generateNumero(factures, formType);
+      const token = crypto.randomUUID();
+      const { error } = await supabase.from("factures").insert({
+        numero, type: formType,
+        client_id: form.client_id || null,
+        client_nom: form.client_nom, client_email: form.client_email,
+        date: form.date, echeance: form.echeance || null,
+        statut: "brouillon", lignes: lignesValides, total, notes: form.notes,
+        date_depart: form.date_depart || null,
+        date_retour: form.date_retour || null,
+        token,
+      });
+      if (error) { toast.error("Erreur lors de la création"); return; }
+      toast.success(`${formType === "devis" ? "Devis" : "Facture"} ${numero} créé(e)`);
+    }
     setShowForm(false);
+    setEditingDoc(null);
     loadData();
   };
 
@@ -535,6 +572,10 @@ export default function FacturesSection() {
           <button onClick={() => { setPreviewDoc(doc); setSelected(null); }}
             className="flex items-center justify-center gap-2 py-2.5 bg-[#408398] text-white rounded-xl text-xs font-semibold hover:bg-[#326e80] transition-colors">
             <Eye size={13} /> Aperçu & Envoi
+          </button>
+          <button onClick={() => openEdit(doc)}
+            className="flex items-center justify-center gap-2 py-2.5 bg-gray-100 text-gray-700 rounded-xl text-xs font-semibold hover:bg-gray-200 transition-colors">
+            <Edit2 size={13} /> Modifier le document
           </button>
           <button onClick={() => deleteFacture(doc.id)}
             className="flex items-center justify-center gap-2 py-2.5 border border-red-200 text-red-400 rounded-xl text-xs font-medium hover:bg-red-50 transition-colors">
@@ -774,9 +815,13 @@ export default function FacturesSection() {
                     </div>
                     <div>
                       <h3 className="text-sm font-bold text-gray-900">
-                        {formType === "devis" ? "Nouveau devis" : "Nouvelle facture"}
+                        {editingDoc
+                          ? `Modifier — ${editingDoc.numero}`
+                          : formType === "devis" ? "Nouveau devis" : "Nouvelle facture"}
                       </h3>
-                      <p className="text-[10px] text-gray-400">Remplissez les informations ci-dessous</p>
+                      <p className="text-[10px] text-gray-400">
+                        {editingDoc ? "Modifiez les informations ci-dessous" : "Remplissez les informations ci-dessous"}
+                      </p>
                     </div>
                   </div>
                   <button onClick={() => setShowForm(false)} className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-xl transition-colors">
@@ -924,7 +969,7 @@ export default function FacturesSection() {
                     </button>
                     <button type="submit"
                       className={`flex-1 py-2.5 text-white rounded-xl text-sm font-semibold transition-colors ${formType === "devis" ? "bg-amber-500 hover:bg-amber-600" : "bg-[#0e2d38] hover:bg-[#1a3f50]"}`}>
-                      Créer {formType === "devis" ? "le devis" : "la facture"}
+                      {editingDoc ? "Enregistrer les modifications" : `Créer ${formType === "devis" ? "le devis" : "la facture"}`}
                     </button>
                   </div>
                 </form>
