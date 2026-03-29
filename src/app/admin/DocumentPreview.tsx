@@ -351,19 +351,6 @@ export default function DocumentPreview({ document: doc, onClose }: Props) {
                 </div>
               )}
 
-              {/* Conditions */}
-              <div style={{ marginBottom: "32px" }}>
-                <p style={{ fontSize: "10px", fontWeight: 700, textTransform: "uppercase", color: "#888", letterSpacing: "1px", marginBottom: "6px" }}>
-                  Conditions
-                </p>
-                <p style={{ fontSize: "11px", color: "#555", lineHeight: "1.8" }}>
-                  {isDevis
-                    ? `Ce devis est valable ${doc.echeance ? `jusqu'au ${fmtDate(doc.echeance)}` : "30 jours à compter de sa date d'émission"}. Tout devis accepté constitue un engagement contractuel. Un acompte de 30% sera demandé à la confirmation.`
-                    : "Paiement à réception de facture. Tout retard de paiement entraîne des pénalités conformément aux conditions générales de vente. Aucun escompte pour paiement anticipé."
-                  }
-                </p>
-              </div>
-
               {/* Droit à l'image */}
               <div style={{ marginBottom: "28px", background: "#f8fafc", border: "1px solid #e2eef2", borderLeft: "3px solid #408398", borderRadius: "8px", padding: "12px 16px" }}>
                 <p style={{ fontSize: "10px", fontWeight: 700, textTransform: "uppercase", color: "#408398", letterSpacing: "1px", marginBottom: "5px" }}>
