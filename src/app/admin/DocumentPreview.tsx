@@ -133,8 +133,12 @@ export default function DocumentPreview({ document: doc, onClose }: Props) {
     document.head.appendChild(style);
     document.body.appendChild(printRoot);
 
+    const prevTitle = document.title;
+    document.title = `${doc.numero} - ${doc.client_nom}`;
+
     window.print();
 
+    document.title = prevTitle;
     document.head.removeChild(style);
     document.body.removeChild(printRoot);
   };
