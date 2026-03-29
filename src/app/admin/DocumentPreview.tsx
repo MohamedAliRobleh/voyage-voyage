@@ -19,6 +19,7 @@ export default function DocumentPreview({ document: doc, onClose }: Props) {
   const [sending, setSending] = useState(false);
   const [sent, setSent] = useState(false);
   const [generatingPdf, setGeneratingPdf] = useState(false);
+  const [printing, setPrinting] = useState(false);
   const [docZoom, setDocZoom] = useState(1);
 
   useEffect(() => {
@@ -109,38 +110,53 @@ export default function DocumentPreview({ document: doc, onClose }: Props) {
     setGeneratingPdf(false);
   };
 
-  const handlePrint = () => {
+  const handlePrint = async () => {
     const content = printRef.current;
     if (!content) return;
-    const win = window.open("", "_blank");
-    if (!win) return;
-    win.document.write(`<!DOCTYPE html>
-<html lang="fr">
-<head>
-  <meta charset="UTF-8"/>
-  <base href="${window.location.origin}/"/>
-  <title>${doc.numero}</title>
-  <style>
-    * { margin:0; padding:0; box-sizing:border-box; -webkit-print-color-adjust:exact!important; print-color-adjust:exact!important; color-adjust:exact!important; }
-    html, body { font-family:Arial,Helvetica,sans-serif; font-size:13px; color:#1a1a1a; background:white; }
-    @page { size:A4 portrait; margin:14mm 16mm; }
-    @media print { * { -webkit-print-color-adjust:exact!important; print-color-adjust:exact!important; color-adjust:exact!important; } }
-  </style>
-</head>
-<body>
-${content.innerHTML}
-</body>
-</html>`);
-    win.document.close();
-    let printed = false;
-    const doPrint = () => {
-      if (printed) return;
-      printed = true;
-      win.focus();
-      win.print();
-    };
-    win.onload = doPrint;
-    setTimeout(doPrint, 1000);
+    setPrinting(true);
+    try {
+      const html2pdf = (await import("html2pdf.js")).default;
+
+      const wrapper = document.createElement("div");
+      wrapper.style.cssText = "font-family:Arial,Helvetica,sans-serif;font-size:13px;color:#1a1a1a;background:white;width:794px;";
+      wrapper.innerHTML = content.innerHTML;
+
+      // Fix relative image URLs
+      wrapper.querySelectorAll("img").forEach(img => {
+        const src = img.getAttribute("src");
+        if (src && src.startsWith("/")) img.src = window.location.origin + src;
+      });
+
+      document.body.appendChild(wrapper);
+
+      const opt = {
+        margin: [12, 14, 12, 14],
+        filename: `${doc.numero}.pdf`,
+        image: { type: "jpeg", quality: 0.98 },
+        html2canvas: { scale: 2, useCORS: true, logging: false, allowTaint: true },
+        jsPDF: { unit: "mm", format: "a4", orientation: "portrait" },
+      };
+
+      const blob: Blob = await html2pdf().from(wrapper).set(opt).outputPdf("blob");
+      document.body.removeChild(wrapper);
+
+      const url = URL.createObjectURL(blob);
+      const win = window.open(url, "_blank");
+      if (!win) {
+        // Popup bloqué — téléchargement direct
+        const link = document.createElement("a");
+        link.href = url;
+        link.download = `${doc.numero}.pdf`;
+        link.click();
+        toast("PDF téléchargé. Ouvrez-le et imprimez depuis votre lecteur PDF.", { icon: "🖨️", duration: 6000 });
+      } else {
+        toast("PDF ouvert dans un nouvel onglet. Utilisez Ctrl+P pour imprimer.", { icon: "🖨️", duration: 5000 });
+      }
+      setTimeout(() => URL.revokeObjectURL(url), 15000);
+    } catch {
+      toast.error("Erreur lors de la génération du PDF");
+    }
+    setPrinting(false);
   };
 
   const fmt = (n: number) => `${Number(n).toLocaleString("fr-FR")} DJF`;
@@ -205,11 +221,15 @@ ${content.innerHTML}
             {/* Print */}
             <button
               onClick={handlePrint}
-              className="flex items-center gap-1.5 px-2.5 sm:px-4 py-1.5 sm:py-2 bg-[#408398] text-white rounded-xl text-xs sm:text-sm font-semibold hover:bg-[#326e80] transition-colors"
+              disabled={printing}
+              className="flex items-center gap-1.5 px-2.5 sm:px-4 py-1.5 sm:py-2 bg-[#408398] text-white rounded-xl text-xs sm:text-sm font-semibold hover:bg-[#326e80] transition-colors disabled:opacity-60"
             >
-              <Printer size={14} />
-              <span className="hidden sm:inline">Imprimer / PDF</span>
-              <span className="sm:hidden">PDF</span>
+              {printing
+                ? <div className="w-3.5 h-3.5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                : <Printer size={14} />
+              }
+              <span className="hidden sm:inline">{printing ? "Génération..." : "Imprimer / PDF"}</span>
+              <span className="sm:hidden">{printing ? "..." : "PDF"}</span>
             </button>
             <button onClick={onClose} className="p-1.5 sm:p-2 text-gray-400 hover:text-gray-600 transition-colors">
               <X size={16} />
