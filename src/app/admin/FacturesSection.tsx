@@ -399,7 +399,9 @@ export default function FacturesSection() {
   };
 
   const changeStatut = async (id: string, statut: Facture["statut"]) => {
-    await supabase.from("factures").update({ statut }).eq("id", id);
+    const update: Record<string, unknown> = { statut };
+    if (statut === "payé") update.date_paiement = localDateStr();
+    await supabase.from("factures").update(update).eq("id", id);
     toast.success(`Statut mis à jour : ${statutConfig[statut].label}`);
     loadData();
     if (selected?.id === id) setSelected({ ...selected, statut });
@@ -421,6 +423,8 @@ export default function FacturesSection() {
       total: doc.total,
       notes: doc.notes,
       token,
+      signature_client: doc.signature_client || null,
+      date_signature: doc.date_signature || null,
     });
     if (error) { toast.error("Erreur lors de la conversion"); return; }
     toast.success(`Facture ${numero} créée depuis le devis ${doc.numero} ✓`);

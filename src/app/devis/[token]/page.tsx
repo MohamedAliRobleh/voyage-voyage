@@ -1,9 +1,9 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef, useCallback } from "react";
 import { useParams } from "next/navigation";
 import type { Facture } from "@/lib/supabase";
-import { Check, MessageCircle, Loader2, AlertCircle, ChevronDown, ChevronUp } from "lucide-react";
+import { Check, MessageCircle, Loader2, AlertCircle, ChevronDown, ChevronUp, Eraser } from "lucide-react";
 
 type State = "loading" | "ready" | "accepted" | "messaged" | "already_done" | "error" | "not_found";
 
@@ -14,6 +14,10 @@ export default function DevisClientPage() {
   const [message, setMessage] = useState("");
   const [showMessageBox, setShowMessageBox] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const [isSigning, setIsSigning] = useState(false);
+  const [hasSigned, setHasSigned] = useState(false);
+  const lastPos = useRef<{ x: number; y: number } | null>(null);
 
   useEffect(() => {
     fetch(`/api/devis/${token}`)
@@ -29,12 +33,87 @@ export default function DevisClientPage() {
       .catch(() => setState("error"));
   }, [token]);
 
+  const getPos = (e: MouseEvent | TouchEvent, canvas: HTMLCanvasElement) => {
+    const rect = canvas.getBoundingClientRect();
+    const scaleX = canvas.width / rect.width;
+    const scaleY = canvas.height / rect.height;
+    if (e instanceof TouchEvent) {
+      const t = e.touches[0];
+      return { x: (t.clientX - rect.left) * scaleX, y: (t.clientY - rect.top) * scaleY };
+    }
+    return { x: (e.clientX - rect.left) * scaleX, y: (e.clientY - rect.top) * scaleY };
+  };
+
+  const startDraw = useCallback((e: MouseEvent | TouchEvent) => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    e.preventDefault();
+    setIsSigning(true);
+    lastPos.current = getPos(e, canvas);
+  }, []);
+
+  const draw = useCallback((e: MouseEvent | TouchEvent) => {
+    if (!isSigning) return;
+    const canvas = canvasRef.current;
+    const ctx = canvas?.getContext("2d");
+    if (!canvas || !ctx || !lastPos.current) return;
+    e.preventDefault();
+    const pos = getPos(e, canvas);
+    ctx.beginPath();
+    ctx.moveTo(lastPos.current.x, lastPos.current.y);
+    ctx.lineTo(pos.x, pos.y);
+    ctx.strokeStyle = "#0e2d38";
+    ctx.lineWidth = 2.5;
+    ctx.lineCap = "round";
+    ctx.lineJoin = "round";
+    ctx.stroke();
+    lastPos.current = pos;
+    setHasSigned(true);
+  }, [isSigning]);
+
+  const stopDraw = useCallback(() => {
+    setIsSigning(false);
+    lastPos.current = null;
+  }, []);
+
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    canvas.addEventListener("mousedown", startDraw);
+    canvas.addEventListener("mousemove", draw);
+    canvas.addEventListener("mouseup", stopDraw);
+    canvas.addEventListener("mouseleave", stopDraw);
+    canvas.addEventListener("touchstart", startDraw, { passive: false });
+    canvas.addEventListener("touchmove", draw, { passive: false });
+    canvas.addEventListener("touchend", stopDraw);
+    return () => {
+      canvas.removeEventListener("mousedown", startDraw);
+      canvas.removeEventListener("mousemove", draw);
+      canvas.removeEventListener("mouseup", stopDraw);
+      canvas.removeEventListener("mouseleave", stopDraw);
+      canvas.removeEventListener("touchstart", startDraw);
+      canvas.removeEventListener("touchmove", draw);
+      canvas.removeEventListener("touchend", stopDraw);
+    };
+  }, [startDraw, draw, stopDraw]);
+
+  const clearSignature = () => {
+    const canvas = canvasRef.current;
+    const ctx = canvas?.getContext("2d");
+    if (!canvas || !ctx) return;
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    setHasSigned(false);
+  };
+
   const handleAccept = async () => {
+    if (!hasSigned) return;
     setSubmitting(true);
+    const canvas = canvasRef.current;
+    const signature = canvas ? canvas.toDataURL("image/png") : null;
     const res = await fetch(`/api/devis/${token}`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ action: "accept" }),
+      body: JSON.stringify({ action: "accept", signature }),
     });
     if (res.ok) setState("accepted");
     else setState("error");
@@ -56,6 +135,33 @@ export default function DevisClientPage() {
 
   const fmt = (n: number) => `${Number(n).toLocaleString("fr-FR")} DJF`;
   const fmtDate = (d: string) => d ? new Date(d).toLocaleDateString("fr-FR", { day: "2-digit", month: "long", year: "numeric" }) : "—";
+
+  type NoteSection = { title: string | null; content: string; color: string; bg: string; border: string; list: boolean };
+  function parseNotes(notes: string): NoteSection[] {
+    const markers = [
+      { regex: /✅\s*INCLUS(?!\s*NON)/i, title: "✅ Inclus", color: "#16a34a", bg: "#f0fdf4", border: "#16a34a", list: true },
+      { regex: /(?:❌|🚫|✗)\s*NON\s*INCLUS/i, title: "❌ Non inclus", color: "#dc2626", bg: "#fef2f2", border: "#dc2626", list: true },
+      { regex: /CONDITIONS?\s+(?:DES?\s+)?R[EÉ]SERVATION/i, title: "📋 Conditions de réservation", color: "#d97706", bg: "#fffbeb", border: "#d97706", list: false },
+      { regex: /(?:📍\s*)?INFORMATIONS?\s+LOGISTIQUES?/i, title: "📍 Informations logistiques", color: "#408398", bg: "#eff8fb", border: "#408398", list: true },
+    ];
+    const positions: { start: number; end: number; def: typeof markers[0] }[] = [];
+    for (const def of markers) {
+      const m = def.regex.exec(notes);
+      if (m) positions.push({ start: m.index, end: m.index + m[0].length, def });
+    }
+    positions.sort((a, b) => a.start - b.start);
+    if (positions.length === 0) return [{ title: null, content: notes, color: "#555", bg: "#f5f9fb", border: "#d97706", list: false }];
+    const sections: NoteSection[] = [];
+    const before = notes.slice(0, positions[0].start).trim();
+    if (before) sections.push({ title: null, content: before, color: "#555", bg: "#f5f9fb", border: "#d97706", list: false });
+    for (let i = 0; i < positions.length; i++) {
+      const { end, def } = positions[i];
+      const nextStart = positions[i + 1]?.start ?? notes.length;
+      const content = notes.slice(end, nextStart).replace(/^[\s•]+/, "").trim();
+      sections.push({ title: def.title, content, color: def.color, bg: def.bg, border: def.border, list: def.list });
+    }
+    return sections;
+  }
 
   return (
     <div style={{ minHeight: "100vh", background: "#f0f4f8", fontFamily: "Arial, Helvetica, sans-serif" }}>
@@ -173,9 +279,26 @@ export default function DevisClientPage() {
 
                 {/* Notes */}
                 {devis.notes && (
-                  <div style={{ marginTop: 20, padding: "12px 14px", background: "#f5f9fb", borderRadius: 8, borderLeft: "3px solid #d97706" }}>
-                    <div style={{ fontSize: 10, fontWeight: 700, textTransform: "uppercase", color: "#d97706", letterSpacing: 1, marginBottom: 6 }}>Notes</div>
-                    <div style={{ fontSize: 12, color: "#555", lineHeight: 1.6 }}>{devis.notes}</div>
+                  <div style={{ marginTop: 20, display: "flex", flexDirection: "column", gap: 8 }}>
+                    {parseNotes(devis.notes).map((section, i) => (
+                      <div key={i} style={{ padding: "12px 14px", background: section.bg, borderRadius: 8, borderLeft: `3px solid ${section.border}` }}>
+                        {section.title && (
+                          <div style={{ fontSize: 11, fontWeight: 700, color: section.color, marginBottom: 7 }}>{section.title}</div>
+                        )}
+                        {section.list ? (
+                          <ul style={{ margin: 0, padding: 0, listStyle: "none", display: "flex", flexDirection: "column", gap: 4 }}>
+                            {section.content.split(/\s*•\s*/).filter(Boolean).map((item, j) => (
+                              <li key={j} style={{ fontSize: 12, color: "#444", lineHeight: 1.6, display: "flex", gap: 6, alignItems: "flex-start" }}>
+                                <span style={{ color: section.color, flexShrink: 0, fontWeight: 700 }}>•</span>
+                                <span>{item.trim()}</span>
+                              </li>
+                            ))}
+                          </ul>
+                        ) : (
+                          <p style={{ fontSize: 12, color: "#444", lineHeight: 1.7, margin: 0, whiteSpace: "pre-wrap" }}>{section.content}</p>
+                        )}
+                      </div>
+                    ))}
                   </div>
                 )}
               </div>
@@ -188,15 +311,48 @@ export default function DevisClientPage() {
                 Lisez attentivement les prestations ci-dessus. Si ce devis vous convient, acceptez-le directement. Sinon, posez-nous vos questions.
               </p>
 
+              {/* Signature pad */}
+              {state === "ready" && !showMessageBox && (
+                <div style={{ marginBottom: 16 }}>
+                  <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 8 }}>
+                    <span style={{ fontSize: 13, fontWeight: 700, color: "#0e2d38" }}>
+                      ✍️ Votre signature <span style={{ color: "#e53e3e", fontSize: 12 }}>*</span>
+                    </span>
+                    <button
+                      onClick={clearSignature}
+                      style={{ display: "flex", alignItems: "center", gap: 4, padding: "4px 10px", background: "none", border: "1px solid #d1d5db", borderRadius: 8, cursor: "pointer", fontSize: 12, color: "#666" }}
+                    >
+                      <Eraser size={12} /> Effacer
+                    </button>
+                  </div>
+                  <div style={{ border: `2px solid ${hasSigned ? "#16a34a" : "#d1d5db"}`, borderRadius: 10, overflow: "hidden", background: "#fafafa", position: "relative", transition: "border-color 0.2s" }}>
+                    <canvas
+                      ref={canvasRef}
+                      width={600}
+                      height={160}
+                      style={{ width: "100%", height: 160, display: "block", cursor: "crosshair", touchAction: "none" }}
+                    />
+                    {!hasSigned && (
+                      <div style={{ position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center", pointerEvents: "none" }}>
+                        <span style={{ fontSize: 13, color: "#bbb", userSelect: "none" }}>Signez ici avec votre doigt ou votre souris</span>
+                      </div>
+                    )}
+                  </div>
+                  {!hasSigned && (
+                    <p style={{ fontSize: 11, color: "#e53e3e", marginTop: 6 }}>La signature est requise pour accepter le devis.</p>
+                  )}
+                </div>
+              )}
+
               {/* Accept button */}
               {state === "ready" && !showMessageBox && (
                 <button
                   onClick={handleAccept}
-                  disabled={submitting}
+                  disabled={submitting || !hasSigned}
                   style={{
-                    width: "100%", padding: "16px", background: "#16a34a", color: "white",
+                    width: "100%", padding: "16px", background: hasSigned ? "#16a34a" : "#9ca3af", color: "white",
                     border: "none", borderRadius: 12, fontSize: 15, fontWeight: 700,
-                    cursor: submitting ? "not-allowed" : "pointer", opacity: submitting ? 0.7 : 1,
+                    cursor: submitting || !hasSigned ? "not-allowed" : "pointer", opacity: submitting ? 0.7 : 1,
                     display: "flex", alignItems: "center", justifyContent: "center", gap: 10,
                     marginBottom: 12, transition: "all 0.2s"
                   }}

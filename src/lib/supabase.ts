@@ -99,5 +99,8 @@ export type Facture = {
   notes: string;
   token: string;
   client_message: string;
+  signature_client: string | null;
+  date_signature: string | null;
+  date_paiement: string | null;
   created_at: string;
 };

@@ -144,6 +144,34 @@ export default function DocumentPreview({ document: doc, onClose }: Props) {
   };
 
   const fmt = (n: number) => `${Number(n).toLocaleString("fr-FR")} DJF`;
+
+  type NoteSection = { title: string | null; content: string; color: string; bg: string; border: string; list: boolean };
+  function parseNotes(notes: string): NoteSection[] {
+    const markers = [
+      { regex: /✅\s*INCLUS(?!\s*NON)/i, title: "✅ Inclus", color: "#16a34a", bg: "#f0fdf4", border: "#16a34a", list: true },
+      { regex: /(?:❌|🚫|✗)\s*NON\s*INCLUS/i, title: "❌ Non inclus", color: "#dc2626", bg: "#fef2f2", border: "#dc2626", list: true },
+      { regex: /CONDITIONS?\s+(?:DES?\s+)?R[EÉ]SERVATION/i, title: "📋 Conditions de réservation", color: "#d97706", bg: "#fffbeb", border: "#d97706", list: false },
+      { regex: /(?:📍\s*)?INFORMATIONS?\s+LOGISTIQUES?/i, title: "📍 Informations logistiques", color: "#408398", bg: "#eff8fb", border: "#408398", list: true },
+    ];
+    const positions: { start: number; end: number; def: typeof markers[0] }[] = [];
+    for (const def of markers) {
+      const m = def.regex.exec(notes);
+      if (m) positions.push({ start: m.index, end: m.index + m[0].length, def });
+    }
+    positions.sort((a, b) => a.start - b.start);
+    if (positions.length === 0) return [{ title: null, content: notes, color: "#555", bg: "#f5f9fb", border: "#d97706", list: false }];
+    const sections: NoteSection[] = [];
+    const before = notes.slice(0, positions[0].start).trim();
+    if (before) sections.push({ title: null, content: before, color: "#555", bg: "#f5f9fb", border: "#d97706", list: false });
+    for (let i = 0; i < positions.length; i++) {
+      const { end, def } = positions[i];
+      const nextStart = positions[i + 1]?.start ?? notes.length;
+      const content = notes.slice(end, nextStart).replace(/^[\s•]+/, "").trim();
+      sections.push({ title: def.title, content, color: def.color, bg: def.bg, border: def.border, list: def.list });
+    }
+    return sections;
+  }
+
   const fmtDate = (d: string) => {
     if (!d) return "—";
     const [y, m, day] = d.split("-").map(Number);
@@ -341,13 +369,26 @@ export default function DocumentPreview({ document: doc, onClose }: Props) {
 
               {/* Notes */}
               {doc.notes && (
-                <div style={{ marginBottom: "24px" }}>
-                  <p style={{ fontSize: "10px", fontWeight: 700, textTransform: "uppercase", color: isDevis ? "#d97706" : "#408398", letterSpacing: "1px", marginBottom: "6px" }}>
-                    Notes
-                  </p>
-                  <p style={{ fontSize: "11px", color: "#555", lineHeight: "1.6", background: "#f5f9fb", padding: "10px 12px", borderRadius: "6px", borderLeft: `3px solid ${isDevis ? "#d97706" : "#408398"}`, whiteSpace: "pre-wrap" }}>
-                    {doc.notes}
-                  </p>
+                <div style={{ marginBottom: "24px", display: "flex", flexDirection: "column", gap: "8px" }}>
+                  {parseNotes(doc.notes).map((section, i) => (
+                    <div key={i} style={{ padding: "10px 12px", background: section.bg, borderRadius: "6px", borderLeft: `3px solid ${section.border}` }}>
+                      {section.title && (
+                        <p style={{ fontSize: "10px", fontWeight: 700, color: section.color, marginBottom: "6px", marginTop: 0 }}>{section.title}</p>
+                      )}
+                      {section.list ? (
+                        <div style={{ display: "flex", flexDirection: "column", gap: "3px" }}>
+                          {section.content.split(/\s*•\s*/).filter(Boolean).map((item, j) => (
+                            <div key={j} style={{ fontSize: "11px", color: "#444", lineHeight: "1.6", display: "flex", gap: "6px" }}>
+                              <span style={{ color: section.color, fontWeight: 700, flexShrink: 0 }}>•</span>
+                              <span>{item.trim()}</span>
+                            </div>
+                          ))}
+                        </div>
+                      ) : (
+                        <p style={{ fontSize: "11px", color: "#444", lineHeight: "1.7", margin: 0, whiteSpace: "pre-wrap" }}>{section.content}</p>
+                      )}
+                    </div>
+                  ))}
                 </div>
               )}
 
@@ -367,7 +408,24 @@ export default function DocumentPreview({ document: doc, onClose }: Props) {
                   <p style={{ fontSize: "10px", fontWeight: 700, textTransform: "uppercase", color: "#888", letterSpacing: "1px", marginBottom: "4px" }}>
                     {isDevis ? "Bon pour accord — Signature client" : "Signature client"}
                   </p>
-                  <p style={{ fontSize: "10px", color: "#aaa" }}>Date : _____ / _____ / _______</p>
+                  {doc.signature_client ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img
+                      src={doc.signature_client}
+                      alt="Signature client"
+                      style={{ maxWidth: "100%", maxHeight: "70px", objectFit: "contain", display: "block", marginTop: "4px" }}
+                    />
+                  ) : (
+                    <p style={{ fontSize: "10px", color: "#aaa", marginTop: "8px" }}>Signature : ______________________</p>
+                  )}
+                  <p style={{ fontSize: "10px", color: doc.date_signature ? "#1a1a1a" : "#aaa", marginTop: "4px" }}>
+                    Date d&apos;acceptation : {doc.date_signature ? fmtDate(doc.date_signature) : "_____ / _____ / _______"}
+                  </p>
+                  {!isDevis && (
+                    <p style={{ fontSize: "10px", color: doc.date_paiement ? "#1a1a1a" : "#aaa", marginTop: "2px" }}>
+                      Date de paiement : {doc.date_paiement ? fmtDate(doc.date_paiement) : "_____ / _____ / _______"}
+                    </p>
+                  )}
                 </div>
                 <div style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center" }}>
                   <p style={{ fontSize: "10px", fontWeight: 700, textTransform: "uppercase", color: "#888", letterSpacing: "1px", margin: 0, padding: 0, alignSelf: "flex-start" }}>

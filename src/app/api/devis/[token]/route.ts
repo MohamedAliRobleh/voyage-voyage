@@ -7,8 +7,6 @@ const supabase = createClient(
   process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
 );
 
-const resend = new Resend(process.env.RESEND_API_KEY);
-
 function fmt(n: number) {
   return `${Number(n).toLocaleString("fr-FR")} DJF`;
 }
@@ -37,7 +35,7 @@ export async function POST(
   { params }: { params: Promise<{ token: string }> }
 ) {
   const { token } = await params;
-  const { action, message } = await req.json();
+  const { action, message, signature } = await req.json();
 
   const { data: devis, error } = await supabase
     .from("factures")
@@ -55,12 +53,19 @@ export async function POST(
   }
 
   if (action === "accept") {
+    const updateData: Record<string, unknown> = {
+      statut: "accepté",
+      date_signature: new Date().toISOString().split("T")[0],
+    };
+    if (signature) updateData.signature_client = signature;
+
     await supabase
       .from("factures")
-      .update({ statut: "accepté" })
+      .update(updateData)
       .eq("token", token);
 
     // Notify admin
+    const resend = new Resend(process.env.RESEND_API_KEY);
     await resend.emails.send({
       from: "Voyage Voyage <contact@voyagevoyagedj.com>",
       to: "voyagevoyagedjib@gmail.com",
@@ -92,6 +97,7 @@ export async function POST(
       .eq("token", token);
 
     // Notify admin
+    const resend = new Resend(process.env.RESEND_API_KEY);
     await resend.emails.send({
       from: "Voyage Voyage <contact@voyagevoyagedj.com>",
       to: "voyagevoyagedjib@gmail.com",
