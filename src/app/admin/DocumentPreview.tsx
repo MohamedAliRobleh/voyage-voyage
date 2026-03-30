@@ -375,7 +375,7 @@ export default function DocumentPreview({ document: doc, onClose }: Props) {
                   </p>
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img
-                    src="/images/pics/Tompan.jpeg"
+                    src="/images/pics/cachet.png.png"
                     alt="Cachet Voyage Voyage"
                     style={{ width: "150px", height: "150px", objectFit: "contain", opacity: 0.9, display: "block" }}
                   />
