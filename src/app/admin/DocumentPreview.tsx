@@ -272,7 +272,7 @@ export default function DocumentPreview({ document: doc, onClose }: Props) {
           >
             <div ref={printRef}>
               {/* Header coloré */}
-              <div style={{ background: "linear-gradient(135deg, #0e2d38 0%, #265868 60%, #408398 100%)", borderRadius: "12px", padding: "24px 32px", marginBottom: "28px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+              <div style={{ background: "linear-gradient(135deg, #0e2d38 0%, #265868 60%, #408398 100%)", borderRadius: "12px", padding: "24px 32px", marginBottom: "28px", display: "flex", justifyContent: "space-between", alignItems: "center", pageBreakInside: "avoid", breakInside: "avoid" }}>
                 <div style={{ display: "flex", alignItems: "center", gap: "16px" }}>
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img
@@ -304,7 +304,7 @@ export default function DocumentPreview({ document: doc, onClose }: Props) {
               <div style={{ height: "4px", background: `linear-gradient(90deg, ${isDevis ? "#d97706" : "#408398"}, ${isDevis ? "#fbbf24" : "#7dd3ea"})`, borderRadius: "2px", marginBottom: "28px" }} />
 
               {/* Meta: client + dates */}
-              <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "28px", background: "#f8fafc", borderRadius: "10px", padding: "20px 24px" }}>
+              <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "28px", background: "#f8fafc", borderRadius: "10px", padding: "20px 24px", pageBreakInside: "avoid", breakInside: "avoid" }}>
                 <div>
                   <p style={{ fontSize: "10px", fontWeight: 700, textTransform: "uppercase", color: isDevis ? "#d97706" : "#408398", letterSpacing: "1px", marginBottom: "6px" }}>
                     {isDevis ? "Destinataire" : "Facturé à"}
@@ -366,7 +366,7 @@ export default function DocumentPreview({ document: doc, onClose }: Props) {
                 </thead>
                 <tbody>
                   {doc.lignes.map((l, i) => (
-                    <tr key={i} style={{ background: i % 2 === 0 ? "white" : "#f0f7f9" }}>
+                    <tr key={i} style={{ background: i % 2 === 0 ? "white" : "#f0f7f9", pageBreakInside: "avoid", breakInside: "avoid" }}>
                       <td style={{ padding: "11px 14px", fontSize: "12px", color: "#1a1a1a", borderBottom: "1px solid #e2eef2", fontWeight: 500 }}>{l.description}</td>
                       <td style={{ padding: "11px 14px", fontSize: "12px", color: "#555", textAlign: "center", borderBottom: "1px solid #e2eef2" }}>{l.quantite}</td>
                       <td style={{ padding: "11px 14px", fontSize: "12px", color: "#555", textAlign: "right", borderBottom: "1px solid #e2eef2" }}>{fmt(l.prix_unitaire)}</td>
@@ -377,7 +377,7 @@ export default function DocumentPreview({ document: doc, onClose }: Props) {
               </table>
 
               {/* Total */}
-              <div style={{ display: "flex", justifyContent: "flex-end", marginBottom: "32px" }}>
+              <div style={{ display: "flex", justifyContent: "flex-end", marginBottom: "32px", pageBreakInside: "avoid", breakInside: "avoid" }}>
                 <div style={{ width: "280px" }}>
                   <div style={{ display: "flex", justifyContent: "space-between", padding: "14px 20px", fontSize: "16px", fontWeight: 900, background: `linear-gradient(135deg, #0e2d38, ${isDevis ? "#92400e" : "#408398"})`, color: "white", borderRadius: "10px", letterSpacing: "1px" }}>
                     <span>TOTAL</span>
@@ -390,7 +390,7 @@ export default function DocumentPreview({ document: doc, onClose }: Props) {
               {doc.notes && (
                 <div style={{ marginBottom: "24px", display: "flex", flexDirection: "column", gap: "8px" }}>
                   {parseNotes(doc.notes).map((section, i) => (
-                    <div key={i} style={{ padding: "10px 12px", background: section.bg, borderRadius: "6px", borderLeft: `3px solid ${section.border}` }}>
+                    <div key={i} style={{ padding: "10px 12px", background: section.bg, borderRadius: "6px", borderLeft: `3px solid ${section.border}`, pageBreakInside: "avoid", breakInside: "avoid" }}>
                       {section.title && (
                         <p style={{ fontSize: "10px", fontWeight: 700, color: section.color, marginBottom: "6px", marginTop: 0 }}>{section.title}</p>
                       )}
@@ -412,7 +412,7 @@ export default function DocumentPreview({ document: doc, onClose }: Props) {
               )}
 
               {/* Droit à l'image */}
-              <div style={{ marginBottom: "28px", background: "#f8fafc", border: "1px solid #e2eef2", borderLeft: "3px solid #408398", borderRadius: "8px", padding: "12px 16px" }}>
+              <div style={{ marginBottom: "28px", background: "#f8fafc", border: "1px solid #e2eef2", borderLeft: "3px solid #408398", borderRadius: "8px", padding: "12px 16px", pageBreakInside: "avoid", breakInside: "avoid" }}>
                 <p style={{ fontSize: "10px", fontWeight: 700, textTransform: "uppercase", color: "#408398", letterSpacing: "1px", marginBottom: "5px" }}>
                   📷 Droit à l&apos;image
                 </p>
@@ -422,7 +422,7 @@ export default function DocumentPreview({ document: doc, onClose }: Props) {
               </div>
 
               {/* Signature & cachet */}
-              <div style={{ display: "flex", gap: "32px", marginBottom: "32px", alignItems: "flex-start" }}>
+              <div style={{ display: "flex", gap: "32px", marginBottom: "32px", alignItems: "flex-start", pageBreakInside: "avoid", breakInside: "avoid" }}>
                 <div style={{ flex: 1, border: "1px solid #ddd", borderRadius: "8px", padding: "16px 20px", minHeight: "110px" }}>
                   <p style={{ fontSize: "10px", fontWeight: 700, textTransform: "uppercase", color: "#888", letterSpacing: "1px", marginBottom: "4px" }}>
                     {isDevis ? "Bon pour accord — Signature client" : "Signature client"}
