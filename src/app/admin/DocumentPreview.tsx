@@ -369,10 +369,16 @@ export default function DocumentPreview({ document: doc, onClose }: Props) {
                   </p>
                   <p style={{ fontSize: "10px", color: "#aaa" }}>Date : _____ / _____ / _______</p>
                 </div>
-                <div style={{ flex: 1, border: "1px solid #ddd", borderRadius: "8px", padding: "16px 20px", minHeight: "90px" }}>
-                  <p style={{ fontSize: "10px", fontWeight: 700, textTransform: "uppercase", color: "#888", letterSpacing: "1px", marginBottom: "4px" }}>
+                <div style={{ flex: 1, border: "1px solid #ddd", borderRadius: "8px", padding: "16px 20px", minHeight: "90px", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center" }}>
+                  <p style={{ fontSize: "10px", fontWeight: 700, textTransform: "uppercase", color: "#888", letterSpacing: "1px", marginBottom: "8px", alignSelf: "flex-start" }}>
                     Cachet & Signature — Voyage Voyage
                   </p>
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img
+                    src="/images/pics/Tompan.jpeg"
+                    alt="Cachet Voyage Voyage"
+                    style={{ width: "110px", height: "110px", objectFit: "contain", opacity: 0.9 }}
+                  />
                 </div>
               </div>
 
