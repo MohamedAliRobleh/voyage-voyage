@@ -104,6 +104,7 @@ export default function FacturesSection() {
   const [showCatalog, setShowCatalog] = useState(false);
   const [editingDoc, setEditingDoc] = useState<Facture | null>(null);
   const [sendingMsg, setSendingMsg] = useState<string | null>(null);
+  const [msgPreview, setMsgPreview] = useState<{ doc: Facture; type: "payment_confirmation" | "return_message"; text: string; whatsappNumber: string | null } | null>(null);
   const [importing, setImporting] = useState(false);
   const [showImportModal, setShowImportModal] = useState(false);
   const [importResults, setImportResults] = useState<{ ok: number; errors: string[] } | null>(null);
@@ -450,39 +451,55 @@ export default function FacturesSection() {
   const totalEnAttente = factures.filter(f => f.statut !== "payé").reduce((s, f) => s + f.total, 0);
 
   // Detail panel inner content — shared between bottom sheet and desktop side panel
-  const sendClientMessage = async (doc: Facture, type: "payment_confirmation" | "return_message") => {
+  const fmtDateMsg = (d: string) => {
+    if (!d) return "";
+    const [y, m, day] = d.split("-").map(Number);
+    return new Date(y, m - 1, day).toLocaleDateString("fr-FR", { day: "2-digit", month: "long", year: "numeric" });
+  };
+  const fmtMoneyMsg = (n: number) => `${Number(n).toLocaleString("fr-FR")} FDJ`;
+
+  const buildDefaultText = (doc: Facture, type: "payment_confirmation" | "return_message"): string => {
+    const firstName = doc.client_nom?.split(" ")[0] || doc.client_nom;
+    if (type === "payment_confirmation") {
+      let text = `Bonjour ${firstName} 👋\n\nNous avons bien reçu votre paiement de *${fmtMoneyMsg(doc.total)}* pour la facture *${doc.numero}*. Votre voyage est confirmé ! 🎉`;
+      if (doc.date_depart) text += `\n\n📅 Départ : ${fmtDateMsg(doc.date_depart)}`;
+      if (doc.date_retour) text += `\n📅 Retour : ${fmtDateMsg(doc.date_retour)}`;
+      text += `\n\nMerci de votre confiance. Nous vous contacterons bientôt pour les derniers détails.\n\n🎁 Parrainez un proche et bénéficiez de 5% de réduction sur votre prochain voyage !\n\nL'équipe *Voyage Voyage* 🌍\n📞 +253 77 07 33 77`;
+      return text;
+    } else {
+      return `Bonjour ${firstName} 👋\n\nNous espérons que votre voyage s'est passé à merveille ! 🌟\n\nVotre avis nous tient à cœur et aide d'autres voyageurs à découvrir Djibouti. Si vous avez quelques minutes, partagez votre expérience ici :\n👉 https://voyagevoyagedj.com/#avis\n\n🔁 Votre prochaine aventure vous attend ! Contactez-nous pour découvrir nos nouvelles offres.\n📸 Partagez vos plus belles photos avec *#VoyageVoyageDjibouti*\n\nMerci infiniment pour votre confiance !\n\n*L'équipe Voyage Voyage* 🌍\n📞 +253 77 07 33 77`;
+    }
+  };
+
+  const openMsgPreview = async (doc: Facture, type: "payment_confirmation" | "return_message") => {
+    let whatsappNumber: string | null = null;
+    if (doc.client_id) {
+      const { data } = await supabase.from("clients").select("whatsapp, telephone").eq("id", doc.client_id).single();
+      whatsappNumber = data?.whatsapp || data?.telephone || null;
+    }
+    setMsgPreview({ doc, type, text: buildDefaultText(doc, type), whatsappNumber });
+  };
+
+  const confirmSendMessage = async () => {
+    if (!msgPreview) return;
+    const { doc, type, text, whatsappNumber } = msgPreview;
     setSendingMsg(type);
     try {
-      // Récupérer le whatsapp du client
-      let clientWhatsapp: string | null = null;
-      if (doc.client_id) {
-        const { data } = await supabase.from("clients").select("whatsapp, telephone").eq("id", doc.client_id).single();
-        clientWhatsapp = data?.whatsapp || data?.telephone || null;
-      }
-
       const res = await fetch("/api/send-client-message", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ type, doc, clientWhatsapp }),
+        body: JSON.stringify({ type, doc, clientWhatsapp: whatsappNumber, customMessage: text }),
       });
       const json = await res.json();
       if (!res.ok) throw new Error(json.error);
-
-      // Email
-      if (json.emailSent) {
-        toast.success(`Email envoyé à ${doc.client_email} ✓`);
-      } else if (!doc.client_email) {
-        toast("Aucun email client — message WhatsApp uniquement", { icon: "ℹ️" });
-      }
-
-      // WhatsApp
-      if (json.whatsappText) {
-        const number = (json.whatsappNumber || "").replace(/\D/g, "");
-        const url = number
-          ? `https://wa.me/${number}?text=${encodeURIComponent(json.whatsappText)}`
-          : `https://wa.me/?text=${encodeURIComponent(json.whatsappText)}`;
-        window.open(url, "_blank");
-      }
+      if (json.emailSent) toast.success(`Email envoyé à ${doc.client_email} ✓`);
+      else if (!doc.client_email) toast("Aucun email — WhatsApp uniquement", { icon: "ℹ️" });
+      const number = (whatsappNumber || "").replace(/\D/g, "");
+      const url = number
+        ? `https://wa.me/${number}?text=${encodeURIComponent(text)}`
+        : `https://wa.me/?text=${encodeURIComponent(text)}`;
+      window.open(url, "_blank");
+      setMsgPreview(null);
     } catch {
       toast.error("Erreur lors de l'envoi du message");
     }
@@ -615,7 +632,7 @@ export default function FacturesSection() {
           </button>
           {doc.type === "facture" && doc.statut === "payé" && (
             <button
-              onClick={() => sendClientMessage(doc, "payment_confirmation")}
+              onClick={() => openMsgPreview(doc, "payment_confirmation")}
               disabled={sendingMsg === "payment_confirmation"}
               className="flex items-center justify-center gap-2 py-2.5 bg-teal-500 text-white rounded-xl text-xs font-semibold hover:bg-teal-600 transition-colors disabled:opacity-60"
             >
@@ -627,7 +644,7 @@ export default function FacturesSection() {
           )}
           {doc.type === "facture" && doc.date_retour && (
             <button
-              onClick={() => sendClientMessage(doc, "return_message")}
+              onClick={() => openMsgPreview(doc, "return_message")}
               disabled={sendingMsg === "return_message"}
               className="flex items-center justify-center gap-2 py-2.5 bg-amber-500 text-white rounded-xl text-xs font-semibold hover:bg-amber-600 transition-colors disabled:opacity-60"
             >
@@ -1282,6 +1299,64 @@ export default function FacturesSection() {
                     </button>
                   </div>
                 </div>
+              </div>
+            </motion.div>
+          </>
+        )}
+      </AnimatePresence>
+
+      {/* Modale prévisualisation message */}
+      <AnimatePresence>
+        {msgPreview && (
+          <>
+            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+              className="fixed inset-0 bg-black/50 backdrop-blur-sm z-[80]" onClick={() => setMsgPreview(null)} />
+            <motion.div initial={{ opacity: 0, y: 40 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 40 }}
+              className="fixed inset-x-0 bottom-0 sm:inset-auto sm:top-1/2 sm:left-1/2 sm:-translate-x-1/2 sm:-translate-y-1/2 z-[81] bg-white rounded-t-2xl sm:rounded-2xl shadow-2xl w-full sm:max-w-lg flex flex-col overflow-hidden"
+              onClick={e => e.stopPropagation()}
+            >
+              {/* Header */}
+              <div className="px-5 py-4 border-b border-gray-100 flex items-center justify-between shrink-0">
+                <div>
+                  <p className="text-sm font-bold text-gray-900">
+                    {msgPreview.type === "payment_confirmation" ? "✅ Confirmation de paiement" : "🌟 Message de retour + Avis"}
+                  </p>
+                  <p className="text-xs text-gray-400 mt-0.5">Modifiez le message avant d&apos;envoyer</p>
+                </div>
+                <button onClick={() => setMsgPreview(null)} className="p-1.5 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors">
+                  <X size={15} />
+                </button>
+              </div>
+
+              {/* Textarea éditable */}
+              <div className="p-5 flex-1 overflow-y-auto">
+                <div className="flex items-center gap-1.5 mb-2">
+                  <MessageCircle size={12} className="text-green-500" />
+                  <span className="text-[10px] font-bold uppercase tracking-wider text-gray-400">Message WhatsApp + Email</span>
+                </div>
+                <textarea
+                  value={msgPreview.text}
+                  onChange={e => setMsgPreview({ ...msgPreview, text: e.target.value })}
+                  rows={12}
+                  className="w-full px-3 py-2.5 border border-gray-200 rounded-xl text-sm text-gray-800 focus:outline-none focus:border-[#408398] focus:ring-2 focus:ring-[#408398]/10 resize-none leading-relaxed"
+                />
+                <div className="mt-2 flex items-center justify-between text-[10px] text-gray-400">
+                  <span>Destinataire : <strong className="text-gray-600">{msgPreview.doc.client_nom}</strong></span>
+                  <span>{msgPreview.text.length} caractères</span>
+                </div>
+              </div>
+
+              {/* Actions */}
+              <div className="px-5 pb-5 flex gap-2 shrink-0">
+                <button onClick={() => setMsgPreview(null)}
+                  className="flex-1 py-2.5 border border-gray-200 rounded-xl text-sm font-medium text-gray-500 hover:bg-gray-50 transition-colors">
+                  Annuler
+                </button>
+                <button onClick={confirmSendMessage} disabled={sendingMsg !== null}
+                  className="flex-1 flex items-center justify-center gap-2 py-2.5 bg-[#408398] hover:bg-[#326e80] text-white rounded-xl text-sm font-bold transition-colors disabled:opacity-60">
+                  {sendingMsg ? <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" /> : <Send size={14} />}
+                  {sendingMsg ? "Envoi..." : "Envoyer Email + WhatsApp"}
+                </button>
               </div>
             </motion.div>
           </>

@@ -57,7 +57,7 @@ function emailLayout(content: string) {
 
 export async function POST(req: NextRequest) {
   try {
-    const { type, doc, clientWhatsapp } = await req.json();
+    const { type, doc, clientWhatsapp, customMessage } = await req.json();
 
     if (!doc || !type) {
       return NextResponse.json({ error: "Paramètres manquants" }, { status: 400 });
@@ -125,6 +125,12 @@ export async function POST(req: NextRequest) {
       whatsappText = `Bonjour ${firstName} 👋\n\nNous espérons que votre voyage s'est passé à merveille ! 🌟\n\nVotre avis nous tient à cœur et aide d'autres voyageurs à découvrir Djibouti. Si vous avez quelques minutes, partagez votre expérience ici :\n👉 ${avisUrl}\n\nMerci infiniment pour votre confiance !\n\n*L'équipe Voyage Voyage* 🌍`;
     } else {
       return NextResponse.json({ error: "Type de message inconnu" }, { status: 400 });
+    }
+
+    // Si message personnalisé, on remplace l'email HTML par le texte custom
+    if (customMessage) {
+      const lines = customMessage.split("\n").map((l: string) => `<p style="margin:0 0 8px;font-size:14px;color:#444;line-height:1.7;">${l || "&nbsp;"}</p>`).join("");
+      htmlContent = htmlContent.replace(/<td style="padding:32px;">[\s\S]*?<\/td>/, `<td style="padding:32px;">${lines}</td>`);
     }
 
     // Envoi email
