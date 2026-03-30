@@ -377,7 +377,7 @@ export default function DocumentPreview({ document: doc, onClose }: Props) {
                   <img
                     src="/images/pics/cachet.png.png"
                     alt="Cachet Voyage Voyage"
-                    style={{ width: "150px", height: "150px", objectFit: "contain", opacity: 0.9, display: "block" }}
+                    style={{ width: "150px", height: "150px", objectFit: "contain", opacity: 0.9, display: "block", marginTop: "-18px" }}
                   />
                 </div>
               </div>
