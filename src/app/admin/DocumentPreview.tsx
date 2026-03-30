@@ -362,22 +362,22 @@ export default function DocumentPreview({ document: doc, onClose }: Props) {
               </div>
 
               {/* Signature & cachet */}
-              <div style={{ display: "flex", gap: "32px", marginBottom: "32px" }}>
-                <div style={{ flex: 1, border: "1px solid #ddd", borderRadius: "8px", padding: "16px 20px", minHeight: "90px" }}>
+              <div style={{ display: "flex", gap: "32px", marginBottom: "32px", alignItems: "flex-start" }}>
+                <div style={{ flex: 1, border: "1px solid #ddd", borderRadius: "8px", padding: "16px 20px", minHeight: "110px" }}>
                   <p style={{ fontSize: "10px", fontWeight: 700, textTransform: "uppercase", color: "#888", letterSpacing: "1px", marginBottom: "4px" }}>
                     {isDevis ? "Bon pour accord — Signature client" : "Signature client"}
                   </p>
                   <p style={{ fontSize: "10px", color: "#aaa" }}>Date : _____ / _____ / _______</p>
                 </div>
-                <div style={{ flex: 1, padding: "16px 20px", minHeight: "90px", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center" }}>
-                  <p style={{ fontSize: "10px", fontWeight: 700, textTransform: "uppercase", color: "#888", letterSpacing: "1px", marginBottom: "8px", alignSelf: "flex-start" }}>
+                <div style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center" }}>
+                  <p style={{ fontSize: "10px", fontWeight: 700, textTransform: "uppercase", color: "#888", letterSpacing: "1px", marginBottom: "6px", alignSelf: "flex-start" }}>
                     Cachet & Signature — Voyage Voyage
                   </p>
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img
                     src="/images/pics/Tompan.jpeg"
                     alt="Cachet Voyage Voyage"
-                    style={{ width: "160px", height: "160px", objectFit: "contain", opacity: 0.9 }}
+                    style={{ width: "130px", height: "130px", objectFit: "contain", opacity: 0.9 }}
                   />
                 </div>
               </div>
