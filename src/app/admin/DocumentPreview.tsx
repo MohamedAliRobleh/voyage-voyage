@@ -40,10 +40,29 @@ export default function DocumentPreview({ document: doc, onClose }: Props) {
     }
     setSending(true);
     try {
+      // Générer le PDF et l'attacher
+      let pdfBase64: string | null = null;
+      const content = printRef.current;
+      if (content) {
+        const html2pdf = (await import("html2pdf.js")).default;
+        const wrapper = document.createElement("div");
+        wrapper.style.cssText = "font-family: Arial, Helvetica, sans-serif; font-size: 13px; color: #1a1a1a; background: white; padding: 14mm 16mm; width: 210mm;";
+        wrapper.innerHTML = content.innerHTML;
+        document.body.appendChild(wrapper);
+        const dataUri: string = await html2pdf().from(wrapper).set({
+          margin: 0,
+          image: { type: "jpeg", quality: 0.98 },
+          html2canvas: { scale: 2, useCORS: true, logging: false },
+          jsPDF: { unit: "mm", format: "a4", orientation: "portrait" },
+        }).outputPdf("datauristring");
+        document.body.removeChild(wrapper);
+        pdfBase64 = dataUri.split(",")[1];
+      }
+
       const res = await fetch("/api/send-document", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ document: doc }),
+        body: JSON.stringify({ document: doc, pdfBase64 }),
       });
       if (res.ok) {
         setSent(true);

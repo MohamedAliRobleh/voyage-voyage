@@ -179,7 +179,7 @@ voyagevoyagedjib@gmail.com | +253 77 07 33 77`;
 }
 
 export async function POST(req: NextRequest) {
-  const { document } = await req.json() as { document: Facture };
+  const { document, pdfBase64 } = await req.json() as { document: Facture; pdfBase64?: string };
 
   if (!document.client_email) {
     return NextResponse.json({ error: "Email du client manquant" }, { status: 400 });
@@ -191,6 +191,7 @@ export async function POST(req: NextRequest) {
     : `Facture ${document.numero} — Voyage Voyage`;
 
   try {
+    const pdfFilename = `${document.client_nom} - ${document.numero}.pdf`;
     await transporter.sendMail({
       from: `"Voyage Voyage" <${process.env.OVH_SMTP_USER}>`,
       to: document.client_email,
@@ -198,6 +199,12 @@ export async function POST(req: NextRequest) {
       subject,
       html: generateHTML(document),
       text: generateText(document),
+      attachments: pdfBase64 ? [{
+        filename: pdfFilename,
+        content: pdfBase64,
+        encoding: "base64",
+        contentType: "application/pdf",
+      }] : undefined,
     });
   } catch (err) {
     const message = err instanceof Error ? err.message : "Erreur inconnue";
