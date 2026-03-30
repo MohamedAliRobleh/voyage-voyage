@@ -54,6 +54,7 @@ export default function DocumentPreview({ document: doc, onClose }: Props) {
           image: { type: "jpeg", quality: 0.98 },
           html2canvas: { scale: 2, useCORS: true, logging: false },
           jsPDF: { unit: "mm", format: "a4", orientation: "portrait" },
+          pagebreak: { mode: ["css", "avoid-all"] },
         }).outputPdf("datauristring");
         document.body.removeChild(wrapper);
         pdfBase64 = dataUri.split(",")[1];
@@ -97,10 +98,11 @@ export default function DocumentPreview({ document: doc, onClose }: Props) {
 
       const opt = {
         margin: 0,
-        filename: `${doc.numero}.pdf`,
+        filename: `${doc.client_nom} - ${doc.numero}.pdf`,
         image: { type: "jpeg", quality: 0.98 },
         html2canvas: { scale: 2, useCORS: true, logging: false },
         jsPDF: { unit: "mm", format: "a4", orientation: "portrait" },
+        pagebreak: { mode: ["css", "avoid-all"] },
       };
 
       const blob: Blob = await html2pdf().from(wrapper).set(opt).outputPdf("blob");
