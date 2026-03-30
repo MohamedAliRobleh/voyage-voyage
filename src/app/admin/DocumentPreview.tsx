@@ -377,7 +377,7 @@ export default function DocumentPreview({ document: doc, onClose }: Props) {
                   <img
                     src="/images/pics/Tompan.jpeg"
                     alt="Cachet Voyage Voyage"
-                    style={{ width: "120px", height: "120px", objectFit: "contain", opacity: 0.9 }}
+                    style={{ width: "160px", height: "160px", objectFit: "contain", opacity: 0.9 }}
                   />
                 </div>
               </div>
