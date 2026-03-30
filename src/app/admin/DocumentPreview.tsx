@@ -40,10 +40,10 @@ export default function DocumentPreview({ document: doc, onClose }: Props) {
     }
     setSending(true);
     try {
-      // Générer le PDF et l'attacher
+      // Générer le PDF et l'attacher (facture uniquement)
       let pdfBase64: string | null = null;
       const content = printRef.current;
-      if (content) {
+      if (content && !isDevis) {
         const html2pdf = (await import("html2pdf.js")).default;
         const wrapper = document.createElement("div");
         wrapper.style.cssText = "font-family: Arial, Helvetica, sans-serif; font-size: 13px; color: #1a1a1a; background: white; padding: 14mm 16mm; width: 210mm;";
