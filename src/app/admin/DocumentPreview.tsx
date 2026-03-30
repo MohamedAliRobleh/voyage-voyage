@@ -370,14 +370,14 @@ export default function DocumentPreview({ document: doc, onClose }: Props) {
                   <p style={{ fontSize: "10px", color: "#aaa" }}>Date : _____ / _____ / _______</p>
                 </div>
                 <div style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center" }}>
-                  <p style={{ fontSize: "10px", fontWeight: 700, textTransform: "uppercase", color: "#888", letterSpacing: "1px", marginBottom: "6px", alignSelf: "flex-start" }}>
+                  <p style={{ fontSize: "10px", fontWeight: 700, textTransform: "uppercase", color: "#888", letterSpacing: "1px", marginBottom: "0px", alignSelf: "flex-start" }}>
                     Cachet & Signature — Voyage Voyage
                   </p>
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img
                     src="/images/pics/Tompan.jpeg"
                     alt="Cachet Voyage Voyage"
-                    style={{ width: "150px", height: "150px", objectFit: "contain", opacity: 0.9, marginTop: "-10px" }}
+                    style={{ width: "150px", height: "150px", objectFit: "contain", opacity: 0.9, marginTop: "0px" }}
                   />
                 </div>
               </div>
