@@ -95,7 +95,7 @@ export default function DevisClientPage() {
       canvas.removeEventListener("touchmove", draw);
       canvas.removeEventListener("touchend", stopDraw);
     };
-  }, [startDraw, draw, stopDraw]);
+  }, [startDraw, draw, stopDraw, state]);
 
   const clearSignature = () => {
     const canvas = canvasRef.current;
